@@ -17,7 +17,6 @@ const now = new Date();
 const dateFull = now.toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
 const dateShort = now.toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' });
 
-document.getElementById('top-date').textContent = dateFull;
 document.getElementById('date-left').textContent = dateFull;
 document.getElementById('share-date').textContent = dateShort;
 setShareDate(dateShort);
