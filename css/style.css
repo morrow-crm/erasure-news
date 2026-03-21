@@ -257,7 +257,7 @@ body {
   padding: 2rem 2rem 2.5rem;
   pointer-events: none;
 }
-.article-layer.is-top { pointer-events: all; position: relative; }
+.article-layer.is-top { pointer-events: all; position: relative; z-index: 1; }
 .article-layer:not(.is-top) { position: absolute; }
 
 .bg-0 { background: var(--paper); }
