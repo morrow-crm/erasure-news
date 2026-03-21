@@ -35,11 +35,11 @@ export function initSourcePills(container) {
   container.querySelectorAll('.pill').forEach(btn => {
     btn.addEventListener('click', () => {
       if (btn.classList.contains('active')) {
-        if (selected.length > 2) {
+        if (selected.length > 1) {
           btn.classList.remove('active');
           selected = selected.filter(x => x.s !== btn.dataset.s);
         }
-      } else if (selected.length < 4) {
+      } else if (selected.length < 3) {
         btn.classList.add('active');
         selected.push({ s: btn.dataset.s, lean: btn.dataset.lean, short: btn.dataset.short });
       }
@@ -75,19 +75,3 @@ export function showWorkspace() {
   document.getElementById('workspace').style.display = 'block';
 }
 
-/** Build the layer-tag bar at top of workspace. */
-export function buildLayerTags(layers, curTop) {
-  const el = document.getElementById('ws-layers');
-  const leanClass = l => l.lean === 'left' ? 'l' : l.lean === 'right' ? 'r' : 'c';
-  el.innerHTML = layers.map((l, i) =>
-    `<span class="layer-tag ${leanClass(l)} ${i === curTop ? 'live' : ''}" id="lt-${i}">${h(l.short)}</span>`
-  ).join('<span class="ws-arrow">\u2192</span>');
-}
-
-/** Update which layer tag is marked live. */
-export function refreshLayerTags(layers, curTop) {
-  layers.forEach((_, i) => {
-    const t = document.getElementById(`lt-${i}`);
-    if (t) t.classList.toggle('live', i === curTop);
-  });
-}

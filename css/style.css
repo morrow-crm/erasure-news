@@ -41,12 +41,6 @@ body {
   letter-spacing: 0.06em;
   color: var(--muted);
 }
-.nameplate-top .edition {
-  font-weight: 700;
-  color: var(--ink);
-  text-transform: uppercase;
-  letter-spacing: 0.14em;
-}
 
 .nameplate-title {
   text-align: center;
@@ -172,34 +166,6 @@ body {
 /* ── WORKSPACE ── */
 #workspace { display: none; }
 
-.ws-bar {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 0.45rem 2rem;
-  border-bottom: 1px solid var(--rule);
-  gap: 1rem;
-  flex-wrap: wrap;
-}
-.ws-layers { display: flex; align-items: center; gap: 0.4rem; flex-wrap: wrap; }
-
-.layer-tag {
-  font-family: 'Courier Prime', monospace;
-  font-size: 0.57rem;
-  letter-spacing: 0.1em;
-  text-transform: uppercase;
-  padding: 0.18rem 0.5rem;
-  border: 1px solid var(--col-rule);
-  color: #bbb;
-  transition: all 0.15s;
-}
-.layer-tag.live { border-color: var(--ink); color: var(--ink); font-weight: 700; }
-.layer-tag.l { border-left: 3px solid #1a3a5a; }
-.layer-tag.r { border-left: 3px solid #5a1a1a; }
-.layer-tag.c { border-left: 3px solid #2a4a2a; }
-
-.ws-arrow { color: var(--col-rule); font-size: 0.75rem; }
-
 .ws-actions { display: flex; gap: 0.35rem; }
 .abtn {
   font-family: 'Courier Prime', monospace;
@@ -247,23 +213,23 @@ body {
 
 /* ── ARTICLE AREA ── */
 .article-wrapper {
-  position: relative;
+  display: grid;
+  grid-template-columns: repeat(var(--col-count, 1), 1fr);
+  column-gap: 0;
   min-height: 500px;
   border-bottom: 3px double var(--rule);
 }
-.article-layer {
-  position: absolute;
-  inset: 0;
+.article-col {
   padding: 2rem 2rem 2.5rem;
-  pointer-events: none;
+  background: var(--paper);
 }
-.article-layer.is-top { pointer-events: all; position: relative; z-index: 1; }
-.article-layer:not(.is-top) { position: absolute; }
-
-.bg-0 { background: var(--paper); }
-.bg-1 { background: #f7f6f2; }
-.bg-2 { background: #f3f2ed; }
-.bg-3 { background: #efeee9; }
+.article-col + .article-col {
+  border-left: 1px solid var(--col-rule);
+}
+@media (max-width: 600px) {
+  .article-wrapper { grid-template-columns: 1fr !important; }
+  .article-col + .article-col { border-left: none; border-top: 1px solid var(--col-rule); }
+}
 
 .src-tag {
   font-family: 'Courier Prime', monospace;
@@ -305,12 +271,7 @@ body {
   font-size: 0.93rem;
   line-height: 1.88;
   color: var(--ink);
-  column-count: 3;
-  column-gap: var(--gap);
-  column-rule: 1px solid var(--col-rule);
 }
-@media (max-width: 700px) { .art-body { column-count: 2; } }
-@media (max-width: 460px) { .art-body { column-count: 1; } }
 
 /* ── WORDS ── */
 .w {
@@ -332,9 +293,6 @@ body {
   outline-offset: 2px;
   border-radius: 1px;
 }
-.bg-1 .w.kept { outline-color: #1a3a5a; color: #1a3a5a; }
-.bg-2 .w.kept { outline-color: #5a1a1a; color: #5a1a1a; }
-.bg-3 .w.kept { outline-color: #2a4a2a; color: #2a4a2a; }
 
 /* ── POEM PANEL ── */
 .poem-panel { border-bottom: 3px double var(--rule); }

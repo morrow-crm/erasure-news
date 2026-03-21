@@ -1,22 +1,20 @@
-import { h, refreshLayerTags } from './ui.js';
+import { h } from './ui.js';
 import { updatePoem } from './poem.js';
 
 // ── State shared across this module ──
 let layers = [];
 let wState = {};
-let curTop = 0;
 let undoStack = [];
 let dragging = false;
 let dragMode = null;
 
 export function getState() {
-  return { layers, wState, curTop, undoStack };
+  return { layers, wState, undoStack };
 }
 
 export function resetState() {
   layers = [];
   wState = {};
-  curTop = 0;
   undoStack = [];
   dragging = false;
   dragMode = null;
@@ -57,22 +55,21 @@ function populateWords(container, toks, li, wiStart) {
   return wi;
 }
 
-/** Build all article layers in the DOM. */
+/** Build all article columns in the DOM. */
 export function buildArticleLayers(articles, wrapper) {
   layers = articles;
   wState = {};
   undoStack = [];
-  curTop = 0;
   wrapper.innerHTML = '';
+  wrapper.style.setProperty('--col-count', layers.length);
 
   layers.forEach((art, li) => {
     const div = document.createElement('div');
-    div.className = `article-layer bg-${li}`;
+    div.className = 'article-col';
     div.id = `al-${li}`;
-    if (li === 0) div.classList.add('is-top');
 
     div.innerHTML = `
-      <div class="src-tag">${h(art.short)} \u00b7 Layer ${li + 1}</div>
+      <div class="src-tag">${h(art.short)} \u00b7 ${h(art.topic)}</div>
       <div class="art-kicker">${h(art.topic)} \u00b7 ${h(art.short)}</div>
       <div class="art-hed"></div>
       <div class="art-byline"></div>
@@ -94,12 +91,6 @@ export function buildArticleLayers(articles, wrapper) {
     art.toks = bodyToks;
     populateWords(div.querySelector(`#ab-${li}`), bodyToks, li, wi);
   });
-
-  // Set wrapper min-height to match top layer
-  requestAnimationFrame(() => {
-    const top = document.querySelector('.article-layer.is-top');
-    if (top) wrapper.style.minHeight = Math.max(top.scrollHeight, 500) + 'px';
-  });
 }
 
 /** Apply erase or keep action to a word span. */
@@ -115,7 +106,6 @@ function act(span, mode) {
     wState[key] = 'erased';
     span.classList.remove('kept');
     span.classList.add('erased');
-    checkComplete(li);
   } else {
     if (prev === 'erased') return;
     undoStack.push({ key, prev });
@@ -128,25 +118,6 @@ function act(span, mode) {
     }
   }
   updatePoem();
-}
-
-/** If all words on a layer are erased, advance to the next. */
-function checkComplete(li) {
-  const layer = document.getElementById(`al-${li}`);
-  const words = layer.querySelectorAll('.w');
-  const allErased = Array.from(words).every(w => wState[`${li}-${w.dataset.wi}`] === 'erased');
-
-  if (allErased && li === curTop && li + 1 < layers.length) {
-    curTop = li + 1;
-    layer.classList.remove('is-top');
-    const next = document.getElementById(`al-${curTop}`);
-    next.classList.add('is-top');
-    requestAnimationFrame(() => {
-      const wr = document.getElementById('article-wrapper');
-      wr.style.minHeight = Math.max(next.scrollHeight, 500) + 'px';
-    });
-    refreshLayerTags(layers, curTop);
-  }
 }
 
 /** Undo the last erase/keep action. */
@@ -163,21 +134,6 @@ export function undoLast() {
   if (prev === 'erased') span.classList.add('erased');
   else if (prev === 'kept') span.classList.add('kept');
 
-  // Recalculate which layer is on top
-  let top = 0;
-  for (let i = 0; i < layers.length; i++) {
-    const ws = document.getElementById(`al-${i}`).querySelectorAll('.w');
-    if (!Array.from(ws).every(w => wState[`${i}-${w.dataset.wi}`] === 'erased')) {
-      top = i;
-      break;
-    }
-    if (i === layers.length - 1) top = i;
-  }
-  curTop = top;
-  layers.forEach((_, i) => {
-    document.getElementById(`al-${i}`).classList.toggle('is-top', i === curTop);
-  });
-  refreshLayerTags(layers, curTop);
   updatePoem();
 }
 
@@ -185,7 +141,7 @@ export function undoLast() {
 export function attachInteraction(wrapper) {
   wrapper.addEventListener('mousedown', e => {
     const span = e.target.closest('.w');
-    if (!span || !span.closest('.is-top')) return;
+    if (!span) return;
     dragging = true;
     dragMode = e.shiftKey ? 'keep' : 'erase';
     act(span, dragMode);
@@ -195,7 +151,7 @@ export function attachInteraction(wrapper) {
   wrapper.addEventListener('mouseover', e => {
     if (!dragging || !dragMode) return;
     const span = e.target.closest('.w');
-    if (!span || !span.closest('.is-top')) return;
+    if (!span) return;
     act(span, dragMode);
   });
 
