@@ -7,8 +7,8 @@ import {
 import {
   buildArticleLayers, attachInteraction, undoLast, resetState, getState,
 } from './erasure.js';
-import { updatePoem } from './poem.js';
-import { openShare, closeShare, shareToX, shareToMastodon, copyText, downloadCard, setShareDate } from './share.js';
+import { updatePoem, initPoemTextarea, resetPoemState } from './poem.js';
+import { openShare, closeShare, shareToX, shareToMastodon, copyText, downloadCard, setShareDate, downloadBlackout, downloadPoemText } from './share.js';
 
 // ── Dates ──
 const now = new Date();
@@ -27,6 +27,7 @@ const getSources = initSourcePills(document.getElementById('source-pills'));
 // ── Attach interaction to article wrapper (delegated) ──
 const wrapper = document.getElementById('article-wrapper');
 attachInteraction(wrapper);
+initPoemTextarea();
 
 // ── Begin button ──
 document.getElementById('begin-btn').addEventListener('click', async () => {
@@ -61,9 +62,12 @@ document.getElementById('begin-btn').addEventListener('click', async () => {
 // ── Workspace buttons ──
 document.getElementById('undo-btn').addEventListener('click', undoLast);
 document.getElementById('share-btn').addEventListener('click', openShare);
+document.getElementById('dl-blackout-btn').addEventListener('click', downloadBlackout);
+document.getElementById('dl-poem-btn').addEventListener('click', downloadPoemText);
 document.getElementById('reset-btn').addEventListener('click', () => {
   if (!confirm('Start over?')) return;
   resetState();
+  resetPoemState();
   showSetup();
 });
 

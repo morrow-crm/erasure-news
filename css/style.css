@@ -368,8 +368,15 @@ body {
   color: var(--black);
   min-height: 3rem;
   white-space: pre-wrap;
+  width: 100%;
+  border: none;
+  outline: none;
+  resize: vertical;
+  background: transparent;
+  padding: 0;
+  field-sizing: content;
 }
-#poem-display.empty {
+#poem-display::placeholder {
   font-family: 'Courier Prime', monospace;
   font-size: 0.68rem;
   font-style: normal;
@@ -377,11 +384,6 @@ body {
   color: #c0bab2;
   font-weight: 400;
 }
-
-.pw-0 { color: var(--black); }
-.pw-1 { color: #1a3a5a; }
-.pw-2 { color: #5a1a1a; }
-.pw-3 { color: #2a4a2a; }
 
 /* ── LOADING ── */
 #loading {
