@@ -22,27 +22,53 @@ const SOURCE_STYLES = {
   'New York Post':       'tabloid. Short punchy sentences, sensational verbs, bold claims, vernacular voice.',
 };
 
-export default async function handler(req, res) {
+const CORS_HEADERS = {
+  'Access-Control-Allow-Origin': '*',
+  'Access-Control-Allow-Methods': 'POST, OPTIONS',
+  'Access-Control-Allow-Headers': 'Content-Type',
+};
+
+export const handler = async (event) => {
   // Handle CORS preflight
-  if (req.method === 'OPTIONS') {
-    res.setHeader('Access-Control-Allow-Origin', '*');
-    res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
-    res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
-    return res.status(204).end();
+  if (event.httpMethod === 'OPTIONS') {
+    return { statusCode: 204, headers: CORS_HEADERS, body: '' };
   }
 
-  if (req.method !== 'POST') {
-    return res.status(405).json({ error: 'Method not allowed' });
+  if (event.httpMethod !== 'POST') {
+    return {
+      statusCode: 405,
+      headers: CORS_HEADERS,
+      body: JSON.stringify({ error: 'Method not allowed' }),
+    };
   }
 
   const apiKey = process.env.ANTHROPIC_API_KEY;
   if (!apiKey) {
-    return res.status(500).json({ error: 'ANTHROPIC_API_KEY not configured' });
+    return {
+      statusCode: 500,
+      headers: CORS_HEADERS,
+      body: JSON.stringify({ error: 'ANTHROPIC_API_KEY not configured' }),
+    };
   }
 
-  const { source, topic, dateStr } = req.body;
+  let body;
+  try {
+    body = JSON.parse(event.body);
+  } catch {
+    return {
+      statusCode: 400,
+      headers: CORS_HEADERS,
+      body: JSON.stringify({ error: 'Invalid JSON body' }),
+    };
+  }
+
+  const { source, topic, dateStr } = body;
   if (!source || !topic || !dateStr) {
-    return res.status(400).json({ error: 'Missing required fields: source, topic, dateStr' });
+    return {
+      statusCode: 400,
+      headers: CORS_HEADERS,
+      body: JSON.stringify({ error: 'Missing required fields: source, topic, dateStr' }),
+    };
   }
 
   const seed = TOPIC_SEEDS[topic] || topic;
@@ -77,7 +103,11 @@ Return ONLY valid JSON (no markdown, no backticks):
 
     if (!anthropicRes.ok) {
       const errText = await anthropicRes.text();
-      return res.status(anthropicRes.status).json({ error: `Anthropic API error: ${errText}` });
+      return {
+        statusCode: anthropicRes.status,
+        headers: CORS_HEADERS,
+        body: JSON.stringify({ error: `Anthropic API error: ${errText}` }),
+      };
     }
 
     const data = await anthropicRes.json();
@@ -88,14 +118,25 @@ Return ONLY valid JSON (no markdown, no backticks):
 
     const match = text.match(/\{[\s\S]*\}/);
     if (!match) {
-      return res.status(502).json({ error: 'No JSON in API response' });
+      return {
+        statusCode: 502,
+        headers: CORS_HEADERS,
+        body: JSON.stringify({ error: 'No JSON in API response' }),
+      };
     }
 
     const article = JSON.parse(match[0]);
-    res.setHeader('Access-Control-Allow-Origin', '*');
-    return res.status(200).json(article);
+    return {
+      statusCode: 200,
+      headers: { ...CORS_HEADERS, 'Content-Type': 'application/json' },
+      body: JSON.stringify(article),
+    };
   } catch (err) {
     console.error('Fetch article error:', err);
-    return res.status(500).json({ error: err.message });
+    return {
+      statusCode: 500,
+      headers: CORS_HEADERS,
+      body: JSON.stringify({ error: err.message }),
+    };
   }
-}
+};

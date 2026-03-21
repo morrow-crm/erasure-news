@@ -32,14 +32,14 @@ cp .env.example .env
 npm run dev
 ```
 
-This starts Vercel's local dev server, which serves the static frontend and the serverless function at `/api/fetch-article`.
+This starts Netlify's local dev server, which serves the static frontend and the serverless function at `/api/fetch-article`.
 
-### Deploy to Vercel
+### Deploy to Netlify
 
 1. Push the repo to GitHub
-2. Import the project in [Vercel](https://vercel.com/)
-3. Add `ANTHROPIC_API_KEY` as an environment variable in the Vercel dashboard
-4. Deploy — Vercel handles the serverless function automatically
+2. Connect the repo in [Netlify](https://app.netlify.com/)
+3. Add `ANTHROPIC_API_KEY` as an environment variable (Site settings → Environment variables)
+4. Deploy — Netlify handles the serverless function automatically
 
 ## Project Structure
 
@@ -54,11 +54,12 @@ js/
   poem.js               Kept-word collection, poem rendering
   share.js              Share modal, canvas card, export
   app.js                Entry point — wires everything together
-api/
-  fetch-article.js      Vercel serverless function (holds API key)
-vercel.json             Vercel routing and CORS config
+netlify/
+  functions/
+    fetch-article.js    Netlify serverless function (holds API key)
+netlify.toml            Netlify config (redirects, function directory)
 ```
 
 ## Security
 
-The Anthropic API key is never exposed to the browser. The frontend sends `{ source, topic, dateStr }` to the Vercel serverless function, which constructs the full API request server-side.
+The Anthropic API key is never exposed to the browser. The frontend sends `{ source, topic, dateStr }` to the Netlify serverless function, which constructs the full API request server-side.
