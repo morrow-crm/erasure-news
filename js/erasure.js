@@ -68,9 +68,12 @@ export function buildArticleLayers(articles, wrapper) {
     div.className = 'article-col';
     div.id = `al-${li}`;
 
+    const leanLabel = { left: 'L', center: 'C', right: 'R' }[art.lean] || '';
+    const leanClass = art.lean ? `lean-${art.lean}` : '';
+
     div.innerHTML = `
-      <div class="src-tag">${h(art.short)} \u00b7 ${h(art.topic)}</div>
-      <div class="art-kicker">${h(art.topic)} \u00b7 ${h(art.short)}</div>
+      <div class="src-tag">${leanLabel ? `<span class="lean-badge ${leanClass}">${leanLabel}</span> ` : ''}${h(art.short)}</div>
+      <div class="art-kicker">${h(art.topic)}</div>
       <div class="art-hed"></div>
       <div class="art-byline"></div>
       <div class="art-body" id="ab-${li}"></div>`;

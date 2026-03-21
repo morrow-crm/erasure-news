@@ -1,10 +1,11 @@
 import { fetchHeadlines } from './api.js';
 import {
-  initTopicPills, initSourcePills,
+  initTopicPills,
   showLoading, setLoadingStatus, hideLoading,
   showSetup, showWorkspace,
   renderHeadlineCards, clearHeadlineCards,
 } from './ui.js';
+import { ALL_SOURCES } from './config.js';
 import {
   buildArticleLayers, attachInteraction, undoLast, resetState, getState,
 } from './erasure.js';
@@ -23,7 +24,6 @@ setShareDate(dateShort);
 
 // ── Setup pills ──
 const getTopics = initTopicPills(document.getElementById('topic-pills'));
-const getSources = initSourcePills(document.getElementById('source-pills'));
 
 // ── Attach interaction to article wrapper (delegated) ──
 const wrapper = document.getElementById('article-wrapper');
@@ -89,15 +89,14 @@ function buildParagraphsFromHeadline(hl) {
 // ── Step 1: Find Stories ──
 document.getElementById('begin-btn').addEventListener('click', async () => {
   const topics = getTopics();
-  const sources = getSources();
 
   showLoading('Searching today\u2019s press\u2026');
   headlineData = [];
   selectedIndices.clear();
 
   try {
-    for (let i = 0; i < sources.length; i++) {
-      const src = sources[i];
+    for (let i = 0; i < ALL_SOURCES.length; i++) {
+      const src = ALL_SOURCES[i];
       const topic = topics[i % topics.length];
       setLoadingStatus(`Searching ${src.short} \u2014 ${topic}\u2026`);
       const headlines = await fetchHeadlines(src.s, topic, dateShort);

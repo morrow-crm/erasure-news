@@ -33,20 +33,20 @@ export const TOPIC_SEEDS = {
   work:       'labor market OR remote work OR workers rights OR layoffs OR gig economy',
 };
 
-export const SOURCE_STYLES = {
-  'New York Times':      'measured, analytical, liberal establishment. Dense with named officials and expert quotes. Long sentences, careful attribution.',
-  'The Guardian':        'urgent progressive moral framing. Human-centered, global perspective, environmental urgency. Emotive but factual.',
-  'Washington Post':     'insider Washington. Investigative edge, political consequence, authoritative and detailed.',
-  'AP':                  'wire-service neutral. Short sentences, heavy attribution, passive constructions, inverted pyramid. No opinion.',
-  'Reuters':             'financial-wire precision. Global scope, dry passive voice, numbers and market impact.',
-  'Wall Street Journal': 'business-conservative. Market implications, regulatory cost, economic framing. Policy seen through business lens.',
-  'Fox News':            'populist right. Confrontational tone, government skepticism, emotive language, working-class appeal.',
-  'New York Post':       'tabloid. Short punchy sentences, sensational verbs, bold claims, vernacular voice.',
-  'NPR':                 'public-radio thoughtful. Calm, narrative-driven, human-interest framing, inclusive language, deliberate pacing.',
-  'Bloomberg':           'data-driven financial. Markets-first framing, precise numbers, global macro lens, executive audience.',
-  'Politico':            'Beltway insider. Process-focused, horse-race framing, legislative detail, political strategy emphasis.',
-  'National Review':     'intellectual conservative. Constitutional framing, principled arguments, skepticism of government expansion, literary tone.',
-};
+export const ALL_SOURCES = [
+  { s: 'New York Times',      lean: 'left',   short: 'NYT' },
+  { s: 'The Guardian',        lean: 'left',   short: 'Guardian' },
+  { s: 'Washington Post',     lean: 'left',   short: 'WaPo' },
+  { s: 'NPR',                 lean: 'left',   short: 'NPR' },
+  { s: 'AP',                  lean: 'center', short: 'AP' },
+  { s: 'Reuters',             lean: 'center', short: 'Reuters' },
+  { s: 'Bloomberg',           lean: 'center', short: 'Bloomberg' },
+  { s: 'Politico',            lean: 'center', short: 'Politico' },
+  { s: 'Wall Street Journal', lean: 'right',  short: 'WSJ' },
+  { s: 'Fox News',            lean: 'right',  short: 'Fox' },
+  { s: 'New York Post',       lean: 'right',  short: 'NYPost' },
+  { s: 'National Review',     lean: 'right',  short: 'NatRev' },
+];
 
 // Line-break interval for poem display
 export const POEM_LINE_LENGTH = 6;
