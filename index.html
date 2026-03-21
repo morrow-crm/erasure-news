@@ -1,0 +1,150 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Erasure News</title>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;0,900;1,400;1,700&family=Source+Serif+4:ital,opsz,wght@0,8..60,300;0,8..60,400;0,8..60,600;1,8..60,300;1,8..60,400&family=Courier+Prime:wght@400;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+<div class="newspaper">
+  <!-- NAMEPLATE -->
+  <div class="nameplate">
+    <div class="nameplate-top">
+      <span class="edition">The Erasure Edition</span>
+      <span id="top-date"></span>
+      <span>Vol. I &nbsp;&middot;&nbsp; No. 1</span>
+    </div>
+    <div class="nameplate-title">
+      <div class="paper-name">Erasure News</div>
+    </div>
+    <div class="nameplate-date-row">
+      <span id="date-left"></span>
+      <span>All the facts that fit &mdash; and none that don&rsquo;t.</span>
+      <span>Cost: Your Attention (which we all know is not precious)</span>
+    </div>
+  </div>
+
+  <!-- SETUP -->
+  <div id="setup">
+    <div class="setup-headline">Choose your sources. Erase what you don&rsquo;t like.</div>
+    <div class="setup-deck">Erasure News layers today&rsquo;s news articles &mdash; then invites you to erase. Is what you create news or poetry? Nobody can say!</div>
+    <div class="setup-cols">
+      <div>
+        <div class="col-head">I. Topics</div>
+        <div class="pill-group" id="topic-pills">
+          <button class="pill active" data-t="climate">Climate</button>
+          <button class="pill" data-t="economy">Economy</button>
+          <button class="pill" data-t="politics">Politics</button>
+          <button class="pill" data-t="technology">Technology</button>
+          <button class="pill" data-t="war">War &amp; Conflict</button>
+          <button class="pill" data-t="immigration">Immigration</button>
+          <button class="pill" data-t="health">Health</button>
+          <button class="pill" data-t="justice">Justice</button>
+          <button class="pill" data-t="science">Science</button>
+          <button class="pill" data-t="culture">Culture</button>
+        </div>
+        <p class="setup-note">Select 1&ndash;3 topics</p>
+      </div>
+      <div class="setup-divider"></div>
+      <div>
+        <div class="col-head">II. Sources &amp; Perspectives</div>
+        <div class="pill-group" id="source-pills">
+          <button class="pill left active" data-s="New York Times" data-lean="left" data-short="NYT">Times (L)</button>
+          <button class="pill left" data-s="The Guardian" data-lean="left" data-short="Guardian">Guardian (L)</button>
+          <button class="pill left" data-s="Washington Post" data-lean="left" data-short="WaPo">Wash. Post (L)</button>
+          <button class="pill center" data-s="AP" data-lean="center" data-short="AP">AP (C)</button>
+          <button class="pill center" data-s="Reuters" data-lean="center" data-short="Reuters">Reuters (C)</button>
+          <button class="pill right active" data-s="Wall Street Journal" data-lean="right" data-short="WSJ">Wall St. J (R)</button>
+          <button class="pill right" data-s="Fox News" data-lean="right" data-short="Fox">Fox News (R)</button>
+          <button class="pill right" data-s="New York Post" data-lean="right" data-short="NYPost">NY Post (R)</button>
+        </div>
+        <p class="setup-note">Choose 2&ndash;4 sources &middot; they stack as layers</p>
+      </div>
+    </div>
+    <div class="begin-wrap">
+      <button class="begin-btn" id="begin-btn">Set the Press &rarr;</button>
+    </div>
+  </div>
+
+  <!-- WORKSPACE -->
+  <div id="workspace">
+    <div class="ws-bar">
+      <div class="ws-layers" id="ws-layers"></div>
+      <div class="ws-actions">
+        <button class="abtn" id="undo-btn">&larr; Undo</button>
+        <button class="abtn primary" id="share-btn">Share Poem</button>
+        <button class="abtn" id="reset-btn">Start Over</button>
+      </div>
+    </div>
+    <div class="ws-instruct">
+      <span class="instruct-flag">How to Erase</span>
+      <span class="instruct-copy">
+        <strong>Click or drag</strong> to black out words &nbsp;&middot;&nbsp;
+        <strong>Shift + click</strong> to circle a keeper for your poem &nbsp;&middot;&nbsp;
+        Erase everything on a layer to reveal the source beneath
+      </span>
+    </div>
+    <div class="article-wrapper" id="article-wrapper"></div>
+    <div class="poem-panel">
+      <div class="poem-head">
+        <span class="poem-kicker">Your Erasure</span>
+        <span class="poem-rule"></span>
+      </div>
+      <div class="poem-body">
+        <div id="poem-display" class="empty">Shift + click words above to circle keepers &mdash; they gather here as your poem</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- LOADING -->
+<div id="loading">
+  <div class="load-name">Erasure News</div>
+  <div class="load-rule"></div>
+  <div id="load-status">Searching today&rsquo;s press&hellip;</div>
+</div>
+
+<!-- SHARE MODAL -->
+<div id="share-modal">
+  <div class="share-inner">
+    <div class="share-hd">
+      <span class="share-hd-name">Erasure News</span>
+      <button class="share-close" id="share-close-btn">&times;</button>
+    </div>
+    <div class="share-sub">
+      From <span id="share-sources"></span> &nbsp;&middot;&nbsp; <span id="share-date"></span>
+    </div>
+    <div class="share-poem-box">
+      <div class="share-poem-text" id="share-poem-text"></div>
+    </div>
+    <div class="share-canvas-wrap">
+      <canvas id="share-canvas"></canvas>
+    </div>
+    <div class="share-actions">
+      <button class="sbtn solid" id="share-x-btn">
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-4.714-6.231-5.401 6.231H2.747l7.73-8.835L1.254 2.25H8.08l4.259 5.63zm-1.161 17.52h1.833L7.084 4.126H5.117z"/></svg>
+        Post to X
+      </button>
+      <button class="sbtn" id="share-mastodon-btn">
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor"><path d="M23.268 5.313c-.35-2.578-2.617-4.61-5.304-5.004C17.51.242 15.792 0 11.813 0h-.03c-3.98 0-4.835.242-5.288.309C3.882.692 1.496 2.518.917 5.127.64 6.412.61 7.837.661 9.143c.074 1.874.088 3.745.26 5.611.118 1.24.325 2.47.62 3.68.55 2.237 2.777 4.098 4.96 4.857 2.336.792 4.849.923 7.256.38.265-.061.527-.132.786-.213.585-.184 1.27-.39 1.774-.753a.057.057 0 0 0 .023-.043v-1.809a.052.052 0 0 0-.02-.041.053.053 0 0 0-.046-.01 20.282 20.282 0 0 1-4.709.545c-2.73 0-3.463-1.284-3.674-1.818a5.593 5.593 0 0 1-.319-1.433.053.053 0 0 1 .066-.054c1.517.363 3.072.546 4.632.546.376 0 .75 0 1.125-.01 1.57-.044 3.224-.124 4.768-.422.038-.008.077-.015.11-.024 2.435-.464 4.753-1.92 4.989-5.604.008-.145.03-1.52.03-1.67.002-.512.167-3.63-.024-5.545zm-3.748 9.195h-2.561V8.29c0-1.309-.55-1.976-1.67-1.976-1.23 0-1.846.79-1.846 2.35v3.403h-2.546V8.663c0-1.56-.617-2.35-1.848-2.35-1.112 0-1.668.668-1.67 1.977v6.218H4.822V8.102c0-1.31.337-2.35 1.011-3.12.696-.77 1.608-1.164 2.74-1.164 1.311 0 2.302.5 2.962 1.498l.638 1.06.638-1.06c.66-.999 1.65-1.498 2.96-1.498 1.13 0 2.043.395 2.74 1.164.675.77 1.012 1.81 1.012 3.12z"/></svg>
+        Mastodon
+      </button>
+      <button class="sbtn" id="copy-btn">
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"/></svg>
+        Copy Text
+      </button>
+      <button class="sbtn" id="download-btn">
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+        Download Card
+      </button>
+    </div>
+    <div class="share-meta" id="share-meta"></div>
+  </div>
+</div>
+
+<canvas id="offscreen-canvas" style="display:none"></canvas>
+<script type="module" src="js/app.js"></script>
+</body>
+</html>
