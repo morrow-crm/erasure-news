@@ -1,0 +1,93 @@
+/** HTML-escape a string. */
+export function h(s) {
+  return (s || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+}
+
+/** Initialize topic pill toggles. Returns getter for current selection. */
+export function initTopicPills(container) {
+  let selected = ['climate'];
+
+  container.querySelectorAll('.pill').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const t = btn.dataset.t;
+      if (btn.classList.contains('active')) {
+        if (selected.length > 1) {
+          btn.classList.remove('active');
+          selected = selected.filter(x => x !== t);
+        }
+      } else if (selected.length < 3) {
+        btn.classList.add('active');
+        selected.push(t);
+      }
+    });
+  });
+
+  return () => [...selected];
+}
+
+/** Initialize source pill toggles. Returns getter for current selection. */
+export function initSourcePills(container) {
+  let selected = [
+    { s: 'New York Times', lean: 'left', short: 'NYT' },
+    { s: 'Wall Street Journal', lean: 'right', short: 'WSJ' },
+  ];
+
+  container.querySelectorAll('.pill').forEach(btn => {
+    btn.addEventListener('click', () => {
+      if (btn.classList.contains('active')) {
+        if (selected.length > 2) {
+          btn.classList.remove('active');
+          selected = selected.filter(x => x.s !== btn.dataset.s);
+        }
+      } else if (selected.length < 4) {
+        btn.classList.add('active');
+        selected.push({ s: btn.dataset.s, lean: btn.dataset.lean, short: btn.dataset.short });
+      }
+    });
+  });
+
+  return () => selected.map(x => ({ ...x }));
+}
+
+/** Show loading overlay with optional status text. */
+export function showLoading(msg) {
+  const el = document.getElementById('loading');
+  el.classList.add('show');
+  if (msg) document.getElementById('load-status').textContent = msg;
+}
+
+export function setLoadingStatus(msg) {
+  document.getElementById('load-status').textContent = msg;
+}
+
+export function hideLoading() {
+  document.getElementById('loading').classList.remove('show');
+}
+
+/** Switch between setup and workspace screens. */
+export function showSetup() {
+  document.getElementById('setup').style.display = '';
+  document.getElementById('workspace').style.display = 'none';
+}
+
+export function showWorkspace() {
+  document.getElementById('setup').style.display = 'none';
+  document.getElementById('workspace').style.display = 'block';
+}
+
+/** Build the layer-tag bar at top of workspace. */
+export function buildLayerTags(layers, curTop) {
+  const el = document.getElementById('ws-layers');
+  const leanClass = l => l.lean === 'left' ? 'l' : l.lean === 'right' ? 'r' : 'c';
+  el.innerHTML = layers.map((l, i) =>
+    `<span class="layer-tag ${leanClass(l)} ${i === curTop ? 'live' : ''}" id="lt-${i}">${h(l.short)}</span>`
+  ).join('<span class="ws-arrow">\u2192</span>');
+}
+
+/** Update which layer tag is marked live. */
+export function refreshLayerTags(layers, curTop) {
+  layers.forEach((_, i) => {
+    const t = document.getElementById(`lt-${i}`);
+    if (t) t.classList.toggle('live', i === curTop);
+  });
+}
