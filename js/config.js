@@ -1,8 +1,5 @@
-// API endpoint — in production this points to the Vercel serverless function.
-// For local dev with `vercel dev`, the relative path works automatically.
+// API endpoint — Netlify redirects this to the serverless function.
 export const API_ENDPOINT = '/api/fetch-article';
-
-export const MODEL_NAME = 'claude-sonnet-4-20250514';
 
 export const TOPIC_SEEDS = {
   climate:     'climate change OR extreme weather OR wildfire OR flooding OR carbon emissions',
