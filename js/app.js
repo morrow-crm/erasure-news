@@ -62,13 +62,34 @@ document.getElementById('begin-btn').addEventListener('click', async () => {
 // ── Workspace buttons ──
 document.getElementById('undo-btn').addEventListener('click', undoLast);
 document.getElementById('share-btn').addEventListener('click', openShare);
-document.getElementById('dl-blackout-btn').addEventListener('click', downloadBlackout);
-document.getElementById('dl-poem-btn').addEventListener('click', downloadPoemText);
 document.getElementById('reset-btn').addEventListener('click', () => {
   if (!confirm('Start over?')) return;
   resetState();
   resetPoemState();
   showSetup();
+});
+
+// ── Poem panel buttons ──
+document.getElementById('dl-blackout-btn').addEventListener('click', downloadBlackout);
+document.getElementById('dl-poem-btn').addEventListener('click', downloadPoemText);
+
+// ── Format toolbar ──
+const poemEl = document.getElementById('poem-display');
+document.getElementById('fmt-bold').addEventListener('click', () => {
+  poemEl.focus();
+  document.execCommand('bold');
+});
+document.getElementById('fmt-italic').addEventListener('click', () => {
+  poemEl.focus();
+  document.execCommand('italic');
+});
+document.getElementById('fmt-break').addEventListener('click', () => {
+  poemEl.focus();
+  document.execCommand('insertParagraph');
+});
+document.getElementById('fmt-clear').addEventListener('click', () => {
+  poemEl.focus();
+  document.execCommand('removeFormat');
 });
 
 // ── Share modal buttons ──

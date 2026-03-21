@@ -74,8 +74,6 @@
       <div class="ws-layers" id="ws-layers"></div>
       <div class="ws-actions">
         <button class="abtn" id="undo-btn">&larr; Undo</button>
-        <button class="abtn" id="dl-blackout-btn">&#9608; Blackout PNG</button>
-        <button class="abtn" id="dl-poem-btn">&#9998; Poem .txt</button>
         <button class="abtn primary" id="share-btn">Share Poem</button>
         <button class="abtn" id="reset-btn">Start Over</button>
       </div>
@@ -94,8 +92,20 @@
         <span class="poem-kicker">Your Erasure</span>
         <span class="poem-rule"></span>
       </div>
+      <div class="poem-toolbar">
+        <div class="fmt-group">
+          <button class="fmt-btn" id="fmt-bold" title="Bold"><strong>B</strong></button>
+          <button class="fmt-btn" id="fmt-italic" title="Italic"><em>I</em></button>
+          <button class="fmt-btn" id="fmt-break" title="Line break">&para;</button>
+          <button class="fmt-btn" id="fmt-clear" title="Clear formatting">&times; Fmt</button>
+        </div>
+        <div class="fmt-group">
+          <button class="abtn" id="dl-blackout-btn">&#9608; Download Blackout</button>
+          <button class="abtn" id="dl-poem-btn">&#9998; Download Poem</button>
+        </div>
+      </div>
       <div class="poem-body">
-        <textarea id="poem-display" placeholder="Shift + click words above to circle keepers &mdash; they gather here as your poem"></textarea>
+        <div id="poem-display" contenteditable="true" data-placeholder="Shift + click words above to circle keepers &mdash; they gather here as your poem"></div>
       </div>
     </div>
   </div>

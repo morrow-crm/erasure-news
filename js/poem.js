@@ -1,18 +1,12 @@
 import { getState } from './erasure.js';
 import { POEM_LINE_LENGTH } from './config.js';
 
-/** Whether the user has manually edited the textarea. */
+/** Whether the user has manually edited the poem. */
 let userEdited = false;
 
-/** Get the textarea element. */
+/** Get the contenteditable poem element. */
 function el() {
   return document.getElementById('poem-display');
-}
-
-/** Auto-size textarea height (fallback for browsers without field-sizing). */
-function autoSize(ta) {
-  ta.style.height = 'auto';
-  ta.style.height = ta.scrollHeight + 'px';
 }
 
 /** Get all kept words in document order. */
@@ -43,32 +37,26 @@ function buildPoemText() {
   return t.trim();
 }
 
-/** Update the poem textarea (unless user has manually edited). */
+/** Update the poem display (unless user has manually edited). */
 export function updatePoem() {
   if (userEdited) return;
-  const ta = el();
-  ta.value = buildPoemText();
-  autoSize(ta);
+  el().textContent = buildPoemText();
 }
 
-/** Get poem text — always reads from the textarea (respects edits). */
+/** Get poem text — reads from the contenteditable div (respects edits). */
 export function getPoemString() {
-  return el().value.trim();
+  return el().innerText.trim();
 }
 
 /** Reset the user-edited lock (called on "Start Over"). */
 export function resetPoemState() {
   userEdited = false;
-  const ta = el();
-  ta.value = '';
-  autoSize(ta);
+  el().textContent = '';
 }
 
 /** Attach input listener to detect manual edits. */
 export function initPoemTextarea() {
-  const ta = el();
-  ta.addEventListener('input', () => {
+  el().addEventListener('input', () => {
     userEdited = true;
-    autoSize(ta);
   });
 }
