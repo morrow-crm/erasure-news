@@ -129,7 +129,7 @@ exports.handler = async (event) => {
     };
   }
 
-  const { source, topic, dateStr } = body;
+  const { source, topic, dateStr, mode } = body;
   console.log(`[fetch-article] source="${source}", topic="${topic}", dateStr="${dateStr}"`);
   if (!source || !topic || !dateStr) {
     return {
@@ -148,7 +148,7 @@ exports.handler = async (event) => {
   const params = new URLSearchParams({
     q: query,
     sortBy: 'publishedAt',
-    pageSize: '5',
+    pageSize: mode === 'headlines' ? '12' : '5',
     language: 'en',
     from,
     apiKey,
@@ -217,6 +217,24 @@ exports.handler = async (event) => {
     }
 
     console.log(`[fetch-article] Success: ${data.articles.length} articles, lead headline: "${data.articles[0].title}"`);
+
+    if (mode === 'headlines') {
+      const headlines = data.articles.map(a => ({
+        title: a.title,
+        description: (a.description || '').trim(),
+        content: cleanContent(a.content),
+        author: a.author || 'Staff Reporter',
+        sourceName: a.source?.name || source,
+        publishedAt: a.publishedAt,
+        url: a.url,
+      }));
+      return {
+        statusCode: 200,
+        headers: { ...CORS_HEADERS, 'Content-Type': 'application/json' },
+        body: JSON.stringify({ headlines }),
+      };
+    }
+
     const article = buildArticle(data.articles, source, dateStr);
     return {
       statusCode: 200,

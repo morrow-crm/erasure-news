@@ -163,6 +163,115 @@ body {
 }
 .begin-btn:hover { background: #2a2a2a; }
 
+/* ── HEADLINES BROWSER ── */
+#headlines-section { padding: 0 2rem 2.5rem; }
+
+.hl-rule {
+  height: 3px;
+  background: var(--rule);
+  margin-bottom: 1.5rem;
+}
+
+.hl-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  margin-bottom: 1.2rem;
+  border-bottom: 1px solid var(--col-rule);
+  padding-bottom: 0.5rem;
+}
+.hl-kicker {
+  font-family: 'Playfair Display', serif;
+  font-weight: 700;
+  font-size: 0.78rem;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: var(--black);
+}
+.hl-count {
+  font-family: 'Courier Prime', monospace;
+  font-size: 0.58rem;
+  letter-spacing: 0.06em;
+  color: var(--muted);
+}
+
+.hl-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 0;
+}
+@media (max-width: 600px) {
+  .hl-grid { grid-template-columns: 1fr; }
+}
+
+.hl-card {
+  padding: 1.2rem 1.4rem;
+  border: 1px solid var(--col-rule);
+  margin: -0.5px;
+  cursor: pointer;
+  transition: background 0.12s, border-color 0.12s;
+  position: relative;
+}
+.hl-card:hover { background: var(--offwhite); }
+.hl-card.selected {
+  background: var(--offwhite);
+  border-color: var(--ink);
+  box-shadow: inset 0 0 0 1px var(--ink);
+}
+.hl-card.selected::after {
+  content: '\2713';
+  position: absolute;
+  top: 0.5rem;
+  right: 0.7rem;
+  font-family: 'Courier Prime', monospace;
+  font-size: 0.7rem;
+  font-weight: 700;
+  color: var(--black);
+}
+.hl-card.disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.hl-card-source {
+  font-family: 'Courier Prime', monospace;
+  font-size: 0.54rem;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: var(--muted);
+  margin-bottom: 0.35rem;
+}
+.hl-card-title {
+  font-family: 'Playfair Display', serif;
+  font-weight: 900;
+  font-size: clamp(0.9rem, 1.8vw, 1.15rem);
+  line-height: 1.25;
+  color: var(--black);
+  margin-bottom: 0.4rem;
+}
+.hl-card-desc {
+  font-family: 'Source Serif 4', serif;
+  font-size: 0.82rem;
+  line-height: 1.55;
+  color: var(--muted);
+  margin-bottom: 0.5rem;
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+.hl-card-meta {
+  font-family: 'Courier Prime', monospace;
+  font-size: 0.5rem;
+  letter-spacing: 0.06em;
+  color: #b0a89e;
+}
+
+#erasure-btn:disabled {
+  opacity: 0.35;
+  cursor: not-allowed;
+}
+
 /* ── WORKSPACE ── */
 #workspace { display: none; }
 
