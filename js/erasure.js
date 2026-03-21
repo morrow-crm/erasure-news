@@ -34,6 +34,29 @@ function tokenize(text) {
   return out;
 }
 
+/** Populate a container with word spans and space text nodes.
+ *  Returns the next word index after all words are added. */
+function populateWords(container, toks, li, wiStart) {
+  let wi = wiStart;
+  toks.forEach(tok => {
+    if (tok.type === 'sp') {
+      container.appendChild(document.createTextNode(tok.v));
+    } else if (tok.type === 'br') {
+      container.appendChild(document.createElement('br'));
+      container.appendChild(document.createElement('br'));
+    } else {
+      const s = document.createElement('span');
+      s.className = 'w';
+      s.dataset.li = li;
+      s.dataset.wi = wi;
+      s.textContent = tok.v;
+      container.appendChild(s);
+      wi++;
+    }
+  });
+  return wi;
+}
+
 /** Build all article layers in the DOM. */
 export function buildArticleLayers(articles, wrapper) {
   layers = articles;
@@ -43,9 +66,6 @@ export function buildArticleLayers(articles, wrapper) {
   wrapper.innerHTML = '';
 
   layers.forEach((art, li) => {
-    const toks = tokenize(art.paragraphs.join(' ¶ '));
-    art.toks = toks;
-
     const div = document.createElement('div');
     div.className = `article-layer bg-${li}`;
     div.id = `al-${li}`;
@@ -54,29 +74,25 @@ export function buildArticleLayers(articles, wrapper) {
     div.innerHTML = `
       <div class="src-tag">${h(art.short)} \u00b7 Layer ${li + 1}</div>
       <div class="art-kicker">${h(art.topic)} \u00b7 ${h(art.short)}</div>
-      <div class="art-hed">${h(art.headline || '')}</div>
-      <div class="art-byline">${h(art.byline || '')}</div>
+      <div class="art-hed"></div>
+      <div class="art-byline"></div>
       <div class="art-body" id="ab-${li}"></div>`;
     wrapper.appendChild(div);
 
-    const body = div.querySelector(`#ab-${li}`);
     let wi = 0;
-    toks.forEach(tok => {
-      if (tok.type === 'sp') {
-        body.appendChild(document.createTextNode(tok.v));
-      } else if (tok.type === 'br') {
-        body.appendChild(document.createElement('br'));
-        body.appendChild(document.createElement('br'));
-      } else {
-        const s = document.createElement('span');
-        s.className = 'w';
-        s.dataset.li = li;
-        s.dataset.wi = wi;
-        s.textContent = tok.v;
-        body.appendChild(s);
-        wi++;
-      }
-    });
+
+    // Headline words
+    const hedToks = tokenize(art.headline || '');
+    wi = populateWords(div.querySelector('.art-hed'), hedToks, li, wi);
+
+    // Byline words
+    const bylToks = tokenize(art.byline || '');
+    wi = populateWords(div.querySelector('.art-byline'), bylToks, li, wi);
+
+    // Body words
+    const bodyToks = tokenize(art.paragraphs.join(' ¶ '));
+    art.toks = bodyToks;
+    populateWords(div.querySelector(`#ab-${li}`), bodyToks, li, wi);
   });
 
   // Set wrapper min-height to match top layer
