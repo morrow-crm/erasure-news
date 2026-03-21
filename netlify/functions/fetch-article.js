@@ -23,6 +23,10 @@ const SOURCE_MAP = {
   'Wall Street Journal': { sources: 'the-wall-street-journal' },
   'Fox News':            { sources: 'fox-news' },
   'New York Post':       { domains: 'nypost.com' },
+  'NPR':                 { sources: 'npr' },
+  'Bloomberg':           { sources: 'bloomberg' },
+  'Politico':            { domains: 'politico.com' },
+  'National Review':     { sources: 'national-review' },
 };
 
 const CORS_HEADERS = {
