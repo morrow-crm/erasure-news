@@ -134,3 +134,58 @@ export function downloadCard() {
   a.href = canvas.toDataURL('image/png');
   a.click();
 }
+
+/** Dynamically load html2canvas from CDN (cached after first load). */
+let html2canvasPromise = null;
+function loadHtml2Canvas() {
+  if (html2canvasPromise) return html2canvasPromise;
+  html2canvasPromise = import('https://esm.sh/html2canvas@1.4.1')
+    .then(mod => mod.default);
+  return html2canvasPromise;
+}
+
+/** Download #article-wrapper as a PNG screenshot. */
+export async function downloadBlackout() {
+  const wrapper = document.getElementById('article-wrapper');
+  if (!wrapper) return;
+
+  const btn = document.getElementById('dl-blackout-btn');
+  const orig = btn.innerHTML;
+  btn.textContent = 'Rendering\u2026';
+  btn.disabled = true;
+
+  try {
+    const html2canvas = await loadHtml2Canvas();
+    const canvas = await html2canvas(wrapper, {
+      backgroundColor: '#fafaf7',
+      scale: 2,
+      useCORS: true,
+      logging: false,
+    });
+    const a = document.createElement('a');
+    a.download = `erasure-blackout-${Date.now()}.png`;
+    a.href = canvas.toDataURL('image/png');
+    a.click();
+  } catch (err) {
+    console.error('Blackout screenshot failed:', err);
+    alert('Could not render blackout image. Try again.');
+  } finally {
+    btn.innerHTML = orig;
+    btn.disabled = false;
+  }
+}
+
+/** Download the poem textarea text as a .txt file. */
+export function downloadPoemText() {
+  const poem = getPoemString();
+  if (!poem) {
+    alert('Write or circle some words first.');
+    return;
+  }
+  const blob = new Blob([poem], { type: 'text/plain' });
+  const a = document.createElement('a');
+  a.download = `erasure-poem-${Date.now()}.txt`;
+  a.href = URL.createObjectURL(blob);
+  a.click();
+  URL.revokeObjectURL(a.href);
+}

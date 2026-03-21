@@ -1,6 +1,19 @@
-import { h } from './ui.js';
 import { getState } from './erasure.js';
 import { POEM_LINE_LENGTH } from './config.js';
+
+/** Whether the user has manually edited the textarea. */
+let userEdited = false;
+
+/** Get the textarea element. */
+function el() {
+  return document.getElementById('poem-display');
+}
+
+/** Auto-size textarea height (fallback for browsers without field-sizing). */
+function autoSize(ta) {
+  ta.style.height = 'auto';
+  ta.style.height = ta.scrollHeight + 'px';
+}
 
 /** Get all kept words in document order. */
 export function getKeptWords() {
@@ -18,29 +31,8 @@ export function getKeptWords() {
   return out;
 }
 
-/** Update the poem display element. */
-export function updatePoem() {
-  const el = document.getElementById('poem-display');
-  const words = getKeptWords();
-
-  if (!words.length) {
-    el.className = 'empty';
-    el.textContent = 'Shift + click words above to circle keepers \u2014 they gather here as your poem';
-    return;
-  }
-
-  el.className = '';
-  let html = '';
-  words.forEach((w, i) => {
-    html += `<span class="pw-${w.li}">${h(w.text)}</span>`;
-    if ((i + 1) % POEM_LINE_LENGTH === 0) html += '\n';
-    else if (i + 1 < words.length) html += ' ';
-  });
-  el.innerHTML = html;
-}
-
-/** Get poem as plain text string. */
-export function getPoemString() {
+/** Build plain-text poem from kept words. */
+function buildPoemText() {
   const words = getKeptWords();
   let t = '';
   words.forEach((w, i) => {
@@ -49,4 +41,34 @@ export function getPoemString() {
     else if (i + 1 < words.length) t += ' ';
   });
   return t.trim();
+}
+
+/** Update the poem textarea (unless user has manually edited). */
+export function updatePoem() {
+  if (userEdited) return;
+  const ta = el();
+  ta.value = buildPoemText();
+  autoSize(ta);
+}
+
+/** Get poem text — always reads from the textarea (respects edits). */
+export function getPoemString() {
+  return el().value.trim();
+}
+
+/** Reset the user-edited lock (called on "Start Over"). */
+export function resetPoemState() {
+  userEdited = false;
+  const ta = el();
+  ta.value = '';
+  autoSize(ta);
+}
+
+/** Attach input listener to detect manual edits. */
+export function initPoemTextarea() {
+  const ta = el();
+  ta.addEventListener('input', () => {
+    userEdited = true;
+    autoSize(ta);
+  });
 }
