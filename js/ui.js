@@ -75,3 +75,35 @@ export function showWorkspace() {
   document.getElementById('workspace').style.display = 'block';
 }
 
+/** Render headline cards into the grid. */
+export function renderHeadlineCards(headlines, onClickCallback) {
+  const grid = document.getElementById('hl-grid');
+  grid.innerHTML = '';
+
+  headlines.forEach((hl, index) => {
+    const card = document.createElement('div');
+    card.className = 'hl-card';
+    card.dataset.index = index;
+
+    const dateStr = hl.publishedAt
+      ? new Date(hl.publishedAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
+      : '';
+
+    card.innerHTML = `
+      <div class="hl-card-source">${h(hl.sourceName)}</div>
+      <div class="hl-card-title">${h(hl.title)}</div>
+      <div class="hl-card-desc">${h(hl.description)}</div>
+      <div class="hl-card-meta">${h(hl.author)} &middot; ${dateStr}</div>
+    `;
+
+    card.addEventListener('click', () => onClickCallback(index));
+    grid.appendChild(card);
+  });
+}
+
+/** Clear the headline card grid. */
+export function clearHeadlineCards() {
+  const grid = document.getElementById('hl-grid');
+  if (grid) grid.innerHTML = '';
+}
+
