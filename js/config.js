@@ -23,6 +23,10 @@ export const SOURCE_STYLES = {
   'Wall Street Journal': 'business-conservative. Market implications, regulatory cost, economic framing. Policy seen through business lens.',
   'Fox News':            'populist right. Confrontational tone, government skepticism, emotive language, working-class appeal.',
   'New York Post':       'tabloid. Short punchy sentences, sensational verbs, bold claims, vernacular voice.',
+  'NPR':                 'public-radio thoughtful. Calm, narrative-driven, human-interest framing, inclusive language, deliberate pacing.',
+  'Bloomberg':           'data-driven financial. Markets-first framing, precise numbers, global macro lens, executive audience.',
+  'Politico':            'Beltway insider. Process-focused, horse-race framing, legislative detail, political strategy emphasis.',
+  'National Review':     'intellectual conservative. Constitutional framing, principled arguments, skepticism of government expansion, literary tone.',
 };
 
 // Line-break interval for poem display
