@@ -69,7 +69,7 @@ body {
 }
 
 /* ── SETUP ── */
-#setup { padding: 2.5rem 2rem 3.5rem; }
+#setup { padding: 2rem 2rem 2.5rem; }
 
 .setup-headline {
   font-family: 'Playfair Display', serif;
@@ -88,11 +88,11 @@ body {
   border-top: 1px solid var(--rule);
   border-bottom: 1px solid var(--col-rule);
   padding: 0.7rem 0;
-  margin-bottom: 2rem;
+  margin-bottom: 1rem;
 }
 
 .setup-topics {
-  margin-bottom: 2.5rem;
+  margin-bottom: 1.5rem;
 }
 
 .col-head {
@@ -103,17 +103,17 @@ body {
   letter-spacing: 0.1em;
   border-bottom: 2px solid var(--rule);
   padding-bottom: 0.35rem;
-  margin-bottom: 1rem;
+  margin-bottom: 0.5rem;
   color: var(--black);
 }
 
-.pill-group { display: flex; flex-wrap: wrap; gap: 0.35rem; }
+.pill-group { display: flex; flex-wrap: wrap; gap: 0.45rem; }
 
 .pill {
   font-family: 'Courier Prime', monospace;
   font-size: 0.62rem;
   letter-spacing: 0.05em;
-  padding: 0.28rem 0.7rem;
+  padding: 0.4rem 0.9rem;
   border: 1px solid var(--col-rule);
   background: transparent;
   color: var(--muted);
@@ -149,7 +149,7 @@ body {
 
 .begin-wrap {
   border-top: 1px solid var(--rule);
-  padding-top: 1.8rem;
+  padding-top: 1.2rem;
   text-align: center;
 }
 .begin-btn {
@@ -160,7 +160,7 @@ body {
   color: var(--paper);
   background: var(--black);
   border: none;
-  padding: 0.75rem 3rem;
+  padding: 0.65rem 1.8rem;
   cursor: pointer;
   transition: background 0.14s;
 }
