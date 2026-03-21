@@ -25,29 +25,6 @@ export function initTopicPills(container) {
   return () => [...selected];
 }
 
-/** Initialize source pill toggles. Returns getter for current selection. */
-export function initSourcePills(container) {
-  let selected = [
-    { s: 'New York Times', lean: 'left', short: 'NYT' },
-    { s: 'Wall Street Journal', lean: 'right', short: 'WSJ' },
-  ];
-
-  container.querySelectorAll('.pill').forEach(btn => {
-    btn.addEventListener('click', () => {
-      if (btn.classList.contains('active')) {
-        if (selected.length > 1) {
-          btn.classList.remove('active');
-          selected = selected.filter(x => x.s !== btn.dataset.s);
-        }
-      } else if (selected.length < 3) {
-        btn.classList.add('active');
-        selected.push({ s: btn.dataset.s, lean: btn.dataset.lean, short: btn.dataset.short });
-      }
-    });
-  });
-
-  return () => selected.map(x => ({ ...x }));
-}
 
 /** Show loading overlay with optional status text. */
 export function showLoading(msg) {
@@ -89,8 +66,11 @@ export function renderHeadlineCards(headlines, onClickCallback) {
       ? new Date(hl.publishedAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
       : '';
 
+    const leanLabel = { left: 'L', center: 'C', right: 'R' }[hl.sourceObj?.lean] || '';
+    const leanClass = hl.sourceObj?.lean ? `lean-${hl.sourceObj.lean}` : '';
+
     card.innerHTML = `
-      <div class="hl-card-source">${h(hl.sourceName)}</div>
+      <div class="hl-card-source">${leanLabel ? `<span class="lean-badge ${leanClass}">${leanLabel}</span> ` : ''}${h(hl.sourceName)}</div>
       <div class="hl-card-title">${h(hl.title)}</div>
       <div class="hl-card-desc">${h(hl.description)}</div>
       <div class="hl-card-meta">${h(hl.author)} &middot; ${dateStr}</div>
