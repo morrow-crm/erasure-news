@@ -1,25 +1,28 @@
-const TOPIC_SEEDS = {
+const TOPIC_QUERIES = {
   climate:     'climate change OR extreme weather OR wildfire OR flooding OR carbon emissions',
   economy:     'inflation OR unemployment OR housing market OR interest rates OR recession',
-  politics:    'Congress OR White House OR Senate OR election OR legislation OR political scandal',
+  politics:    'Congress OR White House OR Senate OR election OR legislation',
   technology:  'artificial intelligence OR big tech OR data privacy OR social media regulation',
-  war:         'military conflict OR war OR ceasefire OR troops OR bombing OR casualties',
+  war:         'military conflict OR war OR ceasefire OR troops OR bombing',
   immigration: 'immigration OR migrants OR border OR asylum OR deportation',
   health:      'public health OR pandemic OR hospital OR drug prices OR mental health',
-  justice:     'Supreme Court OR policing OR civil rights OR criminal justice OR protest',
+  justice:     'Supreme Court OR policing OR civil rights OR criminal justice',
   science:     'scientific discovery OR space OR biology OR physics OR research',
-  culture:     'arts OR censorship OR museum OR literature OR film OR cultural policy',
+  culture:     'arts OR censorship OR museum OR literature OR film',
 };
 
-const SOURCE_STYLES = {
-  'New York Times':      'measured, analytical, liberal establishment. Dense with named officials and expert quotes. Long sentences, careful attribution.',
-  'The Guardian':        'urgent progressive moral framing. Human-centered, global perspective, environmental urgency. Emotive but factual.',
-  'Washington Post':     'insider Washington. Investigative edge, political consequence, authoritative and detailed.',
-  'AP':                  'wire-service neutral. Short sentences, heavy attribution, passive constructions, inverted pyramid. No opinion.',
-  'Reuters':             'financial-wire precision. Global scope, dry passive voice, numbers and market impact.',
-  'Wall Street Journal': 'business-conservative. Market implications, regulatory cost, economic framing. Policy seen through business lens.',
-  'Fox News':            'populist right. Confrontational tone, government skepticism, emotive language, working-class appeal.',
-  'New York Post':       'tabloid. Short punchy sentences, sensational verbs, bold claims, vernacular voice.',
+// Map display source names to NewsAPI source IDs or domain fallbacks.
+// Some sources (NYT, NY Post) aren't in NewsAPI's source list but can be
+// reached via the `domains` parameter instead.
+const SOURCE_MAP = {
+  'New York Times':      { domains: 'nytimes.com' },
+  'The Guardian':        { sources: 'the-guardian-us' },
+  'Washington Post':     { sources: 'the-washington-post' },
+  'AP':                  { sources: 'associated-press' },
+  'Reuters':             { sources: 'reuters' },
+  'Wall Street Journal': { sources: 'the-wall-street-journal' },
+  'Fox News':            { sources: 'fox-news' },
+  'New York Post':       { domains: 'nypost.com' },
 };
 
 const CORS_HEADERS = {
@@ -28,8 +31,59 @@ const CORS_HEADERS = {
   'Access-Control-Allow-Headers': 'Content-Type',
 };
 
+/** Strip the "[+1234 chars]" truncation marker NewsAPI appends. */
+function cleanContent(text) {
+  if (!text) return '';
+  return text.replace(/\[\+\d+ chars\]$/, '').trim();
+}
+
+/**
+ * Build the article response object that the frontend expects.
+ * Combines text from up to 5 NewsAPI articles into a single
+ * { headline, byline, paragraphs } structure.
+ */
+function buildArticle(articles, source, dateStr) {
+  const lead = articles[0];
+  const headline = lead.title || 'Untitled';
+  const author = lead.author || 'Staff Reporter';
+  const byline = `By ${author} | ${source} | ${dateStr}`;
+
+  // Collect a text chunk from each article (description + truncated content).
+  const chunks = articles.map(a => {
+    const desc = (a.description || '').trim();
+    const body = cleanContent(a.content);
+    // Avoid repeating the description if it's already the start of content.
+    if (body && desc && body.startsWith(desc.substring(0, 50))) return body;
+    return [desc, body].filter(Boolean).join(' ');
+  }).filter(t => t.length > 0);
+
+  let paragraphs;
+  if (chunks.length >= 5) {
+    paragraphs = chunks.slice(0, 5);
+  } else if (chunks.length > 0) {
+    // Fewer than 5 articles — split all text into 5 roughly equal paragraphs.
+    const allText = chunks.join(' ');
+    const sentences = allText.split(/(?<=[.!?])\s+/);
+    const per = Math.ceil(sentences.length / 5);
+    paragraphs = [];
+    for (let i = 0; i < 5; i++) {
+      const slice = sentences.slice(i * per, (i + 1) * per).join(' ');
+      if (slice) paragraphs.push(slice);
+    }
+  } else {
+    paragraphs = ['No article text available.'];
+  }
+
+  // Pad to at least 2 paragraphs so the erasure layer has enough content.
+  while (paragraphs.length < 2) {
+    paragraphs.push(paragraphs[paragraphs.length - 1]);
+  }
+
+  return { headline, byline, paragraphs };
+}
+
 export const handler = async (event) => {
-  // Handle CORS preflight
+  // CORS preflight
   if (event.httpMethod === 'OPTIONS') {
     return { statusCode: 204, headers: CORS_HEADERS, body: '' };
   }
@@ -42,12 +96,12 @@ export const handler = async (event) => {
     };
   }
 
-  const apiKey = process.env.ANTHROPIC_API_KEY;
+  const apiKey = process.env.NEWSAPI_KEY;
   if (!apiKey) {
     return {
       statusCode: 500,
       headers: CORS_HEADERS,
-      body: JSON.stringify({ error: 'ANTHROPIC_API_KEY not configured' }),
+      body: JSON.stringify({ error: 'NEWSAPI_KEY not configured' }),
     };
   }
 
@@ -71,68 +125,53 @@ export const handler = async (event) => {
     };
   }
 
-  const seed = TOPIC_SEEDS[topic] || topic;
-  const style = SOURCE_STYLES[source] || 'neutral journalistic prose';
+  const query = TOPIC_QUERIES[topic] || topic;
+  const mapping = SOURCE_MAP[source] || {};
 
-  const prompt = `Today is ${dateStr}. Write a realistic news article as it would appear in ${source}.
-Use your web_search tool to find a specific, real, current news story from the past week about: ${seed}
-Write the article in the authentic voice of ${source}: ${style}
-Requirements:
-- Real event: specific names, places, organizations, figures, dates from actual current news
-- Authentic voice — vocabulary, sentence structure, framing distinctive to ${source}
-- ~400 words across exactly 5 paragraphs
-- A strong journalistic headline
-Return ONLY valid JSON (no markdown, no backticks):
-{"headline":"...","byline":"By [Journalist Name] | ${source} | ${dateStr}","paragraphs":["...","...","...","...","..."]}`;
+  // 7-day lookback window
+  const from = new Date(Date.now() - 7 * 86_400_000).toISOString().split('T')[0];
+
+  const params = new URLSearchParams({
+    q: query,
+    sortBy: 'publishedAt',
+    pageSize: '5',
+    language: 'en',
+    from,
+    apiKey,
+  });
+
+  // Use `sources` or `domains` depending on which is available for the outlet.
+  if (mapping.sources) params.set('sources', mapping.sources);
+  else if (mapping.domains) params.set('domains', mapping.domains);
 
   try {
-    const anthropicRes = await fetch('https://api.anthropic.com/v1/messages', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'x-api-key': apiKey,
-        'anthropic-version': '2023-06-01',
-      },
-      body: JSON.stringify({
-        model: 'claude-sonnet-4-20250514',
-        max_tokens: 1000,
-        tools: [{ type: 'web_search_20250305', name: 'web_search' }],
-        messages: [{ role: 'user', content: prompt }],
-      }),
-    });
+    let res = await fetch(`https://newsapi.org/v2/everything?${params}`);
+    let data = await res.json();
 
-    if (!anthropicRes.ok) {
-      const errText = await anthropicRes.text();
-      return {
-        statusCode: anthropicRes.status,
-        headers: CORS_HEADERS,
-        body: JSON.stringify({ error: `Anthropic API error: ${errText}` }),
-      };
+    // Fallback: if no results for this specific source, retry without source filter.
+    if (data.status !== 'ok' || !data.articles || data.articles.length === 0) {
+      params.delete('sources');
+      params.delete('domains');
+      res = await fetch(`https://newsapi.org/v2/everything?${params}`);
+      data = await res.json();
     }
 
-    const data = await anthropicRes.json();
-    const text = (data.content || [])
-      .filter(b => b.type === 'text')
-      .map(b => b.text)
-      .join('');
-
-    const match = text.match(/\{[\s\S]*\}/);
-    if (!match) {
+    if (data.status !== 'ok' || !data.articles || data.articles.length === 0) {
       return {
         statusCode: 502,
         headers: CORS_HEADERS,
-        body: JSON.stringify({ error: 'No JSON in API response' }),
+        body: JSON.stringify({ error: 'No articles found for this source and topic' }),
       };
     }
 
-    const article = JSON.parse(match[0]);
+    const article = buildArticle(data.articles, source, dateStr);
     return {
       statusCode: 200,
       headers: { ...CORS_HEADERS, 'Content-Type': 'application/json' },
       body: JSON.stringify(article),
     };
   } catch (err) {
-    console.error('Fetch article error:', err);
+    console.error('NewsAPI fetch error:', err);
     return {
       statusCode: 500,
       headers: CORS_HEADERS,
