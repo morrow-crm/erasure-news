@@ -2,7 +2,7 @@ import { fetchArticle } from './api.js';
 import {
   initTopicPills, initSourcePills,
   showLoading, setLoadingStatus, hideLoading,
-  showSetup, showWorkspace, buildLayerTags,
+  showSetup, showWorkspace,
 } from './ui.js';
 import {
   buildArticleLayers, attachInteraction, undoLast, resetState, getState,
@@ -48,7 +48,6 @@ document.getElementById('begin-btn').addEventListener('click', async () => {
     }
 
     buildArticleLayers(results, wrapper);
-    buildLayerTags(results, 0);
     showWorkspace();
     updatePoem();
   } catch (err) {
