@@ -8,7 +8,7 @@ import {
   buildArticleLayers, attachInteraction, undoLast, resetState, getState,
 } from './erasure.js';
 import { updatePoem, initPoemTextarea, resetPoemState } from './poem.js';
-import { openShare, closeShare, shareToX, shareToMastodon, copyText, downloadCard, setShareDate, downloadBlackout, downloadPoemText } from './share.js';
+import { openShare, closeShare, shareToX, shareToMastodon, copyText, downloadCard, setShareDate, downloadBlackout } from './share.js';
 
 // ── Dates ──
 const now = new Date();
@@ -71,7 +71,6 @@ document.getElementById('reset-btn').addEventListener('click', () => {
 
 // ── Poem panel buttons ──
 document.getElementById('dl-blackout-btn').addEventListener('click', downloadBlackout);
-document.getElementById('dl-poem-btn').addEventListener('click', downloadPoemText);
 
 // ── Format toolbar ──
 const poemEl = document.getElementById('poem-display');
