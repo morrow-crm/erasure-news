@@ -1,34 +1,147 @@
-const TOPIC_QUERIES = {
-  ai:         'artificial intelligence OR machine learning OR AI regulation OR AI jobs OR ChatGPT',
-  bodies:     'bodily autonomy OR reproductive rights OR abortion OR gender affirming care',
-  climate:    'climate change OR extreme weather OR wildfire OR flooding OR carbon emissions',
-  crime:      'crime OR murder OR robbery OR organized crime OR criminal investigation OR shooting',
-  culture:    'arts OR censorship OR museum OR literature OR film OR cultural policy',
-  education:  'education OR schools OR student loans OR teachers OR curriculum OR university',
-  gender:     'gender equality OR gender identity OR transgender OR women rights OR Title IX',
-  guns:       'gun control OR gun violence OR mass shooting OR Second Amendment OR firearms',
-  health:     'public health OR pandemic OR hospital OR drug prices OR mental health',
-  housing:    'housing crisis OR rent OR homelessness OR affordable housing OR mortgage rates',
-  ice:        'ICE immigration enforcement OR deportation OR immigration raids OR undocumented',
-  inflation:  'inflation OR consumer prices OR cost of living OR grocery prices OR CPI',
-  justice:    'Supreme Court OR policing OR civil rights OR criminal justice OR protest',
-  labor:      'labor unions OR strikes OR collective bargaining OR minimum wage OR workers',
-  land:       'land rights OR public lands OR Indigenous land OR housing development OR eminent domain',
-  money:      'personal finance OR wealth inequality OR billionaires OR wages OR cost of living',
-  power:      'political power OR energy power grid OR power outage OR authoritarian OR executive power',
-  protests:   'protest OR demonstration OR civil disobedience OR rally OR activism OR march',
-  race:       'racial justice OR racism OR diversity OR hate crime OR civil rights',
-  religion:   'religion OR faith OR church OR mosque OR religious freedom OR evangelical',
-  science:    'scientific discovery OR biology OR physics OR research OR breakthrough',
-  space:      'space exploration OR NASA OR rocket launch OR satellite OR asteroid OR Mars',
-  tariffs:    'tariffs OR trade war OR import taxes OR trade policy',
-  technology: 'big tech OR data privacy OR social media regulation OR cybersecurity OR Silicon Valley',
-  unicorns:   'good news OR heartwarming OR acts of kindness OR animal rescue OR unexpected hero OR joyful OR wonder OR surprising discovery',
-  vaccines:   'vaccine OR vaccination OR immunization OR booster OR anti-vax OR public health mandate',
-  war:        'military conflict OR war OR ceasefire OR troops OR bombing OR casualties',
-  water:      'water rights OR water crisis OR drought OR clean water OR flooding',
-  work:       'labor market OR remote work OR workers rights OR layoffs OR gig economy',
+const TOPIC_KEYWORDS = {
+  ai: {
+    query: '"artificial intelligence" OR "AI" OR "machine learning" OR "generative AI" OR "GenAI" OR "large language model" OR "LLM" OR "ChatGPT" OR "OpenAI" OR "Anthropic" OR "Gemini" OR "Claude" OR "deep learning" OR "neural network"',
+    required: ['artificial intelligence', 'AI', 'machine learning', 'generative', 'ChatGPT', 'OpenAI', 'Anthropic', 'Gemini', 'Claude', 'LLM', 'neural', 'deepfake', 'algorithm', 'automation', 'robot'],
+  },
+  bodies: {
+    query: '"abortion" OR "reproductive rights" OR "bodily autonomy" OR "Roe v Wade" OR "gender affirming" OR "trans healthcare" OR "contraception" OR "IVF" OR "maternal health" OR "planned parenthood"',
+    required: ['abortion', 'reproductive', 'bodily autonomy', 'contraception', 'IVF', 'maternal', 'gender affirming', 'trans healthcare', 'planned parenthood'],
+  },
+  climate: {
+    query: '"climate change" OR "global warming" OR "carbon emissions" OR "greenhouse gas" OR "fossil fuels" OR "renewable energy" OR "extreme weather" OR "wildfire" OR "flooding" OR "drought" OR "sea level" OR "IPCC" OR "Paris agreement"',
+    required: ['climate', 'warming', 'carbon', 'emissions', 'fossil fuel', 'renewable', 'wildfire', 'flood', 'drought', 'sea level', 'hurricane', 'tornado', 'extreme weather'],
+  },
+  crime: {
+    query: '"crime" OR "murder" OR "shooting" OR "robbery" OR "arrest" OR "convicted" OR "sentenced" OR "criminal" OR "homicide" OR "assault" OR "theft" OR "fraud" OR "corruption"',
+    required: ['crime', 'murder', 'shooting', 'robbery', 'arrest', 'convicted', 'sentenced', 'criminal', 'homicide', 'assault', 'theft', 'fraud', 'corrupt'],
+  },
+  culture: {
+    query: '"art" OR "music" OR "film" OR "literature" OR "theater" OR "museum" OR "book" OR "novel" OR "exhibition" OR "culture" OR "performance" OR "festival" OR "award" OR "Grammy" OR "Oscar" OR "Pulitzer"',
+    required: ['art', 'music', 'film', 'movie', 'literature', 'theater', 'museum', 'book', 'novel', 'exhibition', 'culture', 'performance', 'festival', 'Grammy', 'Oscar', 'Pulitzer', 'gallery'],
+  },
+  education: {
+    query: '"education" OR "school" OR "university" OR "college" OR "student" OR "teacher" OR "curriculum" OR "tuition" OR "student loan" OR "school board" OR "classroom" OR "academic" OR "literacy" OR "graduation"',
+    required: ['education', 'school', 'university', 'college', 'student', 'teacher', 'curriculum', 'tuition', 'classroom', 'academic', 'literacy', 'graduation', 'school board'],
+  },
+  gender: {
+    query: '"gender" OR "transgender" OR "nonbinary" OR "LGBTQ" OR "feminism" OR "sexism" OR "gender pay gap" OR "Title IX" OR "gender identity" OR "pronouns" OR "women\'s rights" OR "gender based violence"',
+    required: ['gender', 'transgender', 'nonbinary', 'LGBTQ', 'feminism', 'sexism', 'pay gap', 'Title IX', 'gender identity', 'pronouns', "women's rights"],
+  },
+  guns: {
+    query: '"gun" OR "firearm" OR "shooting" OR "Second Amendment" OR "gun control" OR "NRA" OR "mass shooting" OR "gun violence" OR "rifle" OR "handgun" OR "ammunition" OR "concealed carry" OR "red flag law"',
+    required: ['gun', 'firearm', 'Second Amendment', 'NRA', 'shooting', 'gun control', 'mass shooting', 'rifle', 'handgun', 'ammunition', 'concealed carry'],
+  },
+  health: {
+    query: '"health" OR "hospital" OR "disease" OR "pandemic" OR "FDA" OR "CDC" OR "vaccine" OR "cancer" OR "mental health" OR "drug" OR "medication" OR "surgery" OR "healthcare" OR "insurance" OR "Medicaid" OR "Medicare"',
+    required: ['health', 'hospital', 'disease', 'pandemic', 'FDA', 'CDC', 'vaccine', 'cancer', 'mental health', 'drug', 'medication', 'surgery', 'healthcare', 'insurance', 'Medicaid', 'Medicare'],
+  },
+  housing: {
+    query: '"housing" OR "rent" OR "mortgage" OR "eviction" OR "homeless" OR "affordable housing" OR "real estate" OR "home prices" OR "landlord" OR "tenant" OR "zoning" OR "housing crisis" OR "foreclosure"',
+    required: ['housing', 'rent', 'mortgage', 'eviction', 'homeless', 'affordable housing', 'real estate', 'home prices', 'landlord', 'tenant', 'zoning', 'foreclosure'],
+  },
+  ice: {
+    query: '"ICE" OR "immigration enforcement" OR "deportation" OR "undocumented" OR "immigration raid" OR "detention center" OR "border patrol" OR "asylum seeker" OR "immigration arrest" OR "removal order" OR "sanctuary city"',
+    required: ['ICE', 'immigration enforcement', 'deportation', 'undocumented', 'immigration raid', 'detention', 'border patrol', 'asylum', 'removal order', 'sanctuary city'],
+  },
+  inflation: {
+    query: '"inflation" OR "consumer prices" OR "CPI" OR "cost of living" OR "price increase" OR "Federal Reserve" OR "interest rates" OR "purchasing power" OR "tariff" OR "grocery prices" OR "energy prices"',
+    required: ['inflation', 'consumer prices', 'CPI', 'cost of living', 'price increase', 'Federal Reserve', 'interest rates', 'purchasing power', 'grocery prices'],
+  },
+  justice: {
+    query: '"Supreme Court" OR "court ruling" OR "lawsuit" OR "civil rights" OR "justice" OR "trial" OR "verdict" OR "judge" OR "attorney general" OR "DOJ" OR "constitutional" OR "legal" OR "indictment" OR "prosecution"',
+    required: ['Supreme Court', 'court', 'lawsuit', 'civil rights', 'justice', 'trial', 'verdict', 'judge', 'attorney general', 'DOJ', 'constitutional', 'indictment', 'prosecution'],
+  },
+  labor: {
+    query: '"labor" OR "union" OR "strike" OR "workers" OR "wages" OR "minimum wage" OR "layoffs" OR "employment" OR "unemployment" OR "gig economy" OR "NLRB" OR "collective bargaining" OR "workplace" OR "remote work"',
+    required: ['labor', 'union', 'strike', 'workers', 'wages', 'minimum wage', 'layoffs', 'employment', 'unemployment', 'gig economy', 'NLRB', 'collective bargaining', 'workplace'],
+  },
+  land: {
+    query: '"land rights" OR "public lands" OR "Indigenous land" OR "eminent domain" OR "National Park" OR "deforestation" OR "land use" OR "property rights" OR "conservation" OR "land grab" OR "federal land" OR "tribal land"',
+    required: ['land', 'public lands', 'Indigenous', 'eminent domain', 'National Park', 'deforestation', 'conservation', 'tribal', 'property rights', 'land use'],
+  },
+  money: {
+    query: '"wealth" OR "billionaire" OR "inequality" OR "personal finance" OR "stock market" OR "Wall Street" OR "hedge fund" OR "tax" OR "IRS" OR "deficit" OR "debt" OR "cryptocurrency" OR "bitcoin" OR "banking"',
+    required: ['wealth', 'billionaire', 'inequality', 'finance', 'stock market', 'Wall Street', 'hedge fund', 'tax', 'IRS', 'deficit', 'debt', 'cryptocurrency', 'bitcoin', 'banking'],
+  },
+  power: {
+    query: '"executive power" OR "authoritarianism" OR "democracy" OR "autocracy" OR "political power" OR "government overreach" OR "checks and balances" OR "separation of powers" OR "coup" OR "martial law" OR "emergency powers"',
+    required: ['executive power', 'authoritarianism', 'democracy', 'autocracy', 'political power', 'government overreach', 'checks and balances', 'separation of powers', 'coup', 'martial law', 'emergency powers'],
+  },
+  protests: {
+    query: '"protest" OR "demonstration" OR "rally" OR "march" OR "activist" OR "civil disobedience" OR "riot" OR "uprising" OR "sit-in" OR "boycott" OR "picket" OR "demonstrators"',
+    required: ['protest', 'demonstration', 'rally', 'march', 'activist', 'civil disobedience', 'riot', 'uprising', 'boycott', 'picket', 'demonstrators'],
+  },
+  race: {
+    query: '"race" OR "racism" OR "racial" OR "civil rights" OR "Black" OR "white supremacy" OR "discrimination" OR "diversity" OR "equity" OR "reparations" OR "hate crime" OR "systemic racism" OR "NAACP" OR "segregation"',
+    required: ['race', 'racism', 'racial', 'civil rights', 'white supremacy', 'discrimination', 'diversity', 'equity', 'reparations', 'hate crime', 'systemic racism', 'NAACP', 'segregation'],
+  },
+  religion: {
+    query: '"religion" OR "church" OR "faith" OR "Christian" OR "Muslim" OR "Jewish" OR "Hindu" OR "Buddhist" OR "mosque" OR "synagogue" OR "religious freedom" OR "Pope" OR "evangelical" OR "separation of church and state"',
+    required: ['religion', 'church', 'faith', 'Christian', 'Muslim', 'Jewish', 'Hindu', 'Buddhist', 'mosque', 'synagogue', 'religious freedom', 'Pope', 'evangelical'],
+  },
+  science: {
+    query: '"science" OR "research" OR "study" OR "discovery" OR "scientist" OR "biology" OR "physics" OR "chemistry" OR "genetics" OR "evolution" OR "NASA" OR "experiment" OR "breakthrough" OR "peer reviewed"',
+    required: ['science', 'research', 'study', 'discovery', 'scientist', 'biology', 'physics', 'chemistry', 'genetics', 'evolution', 'NASA', 'experiment', 'breakthrough'],
+  },
+  space: {
+    query: '"space" OR "NASA" OR "SpaceX" OR "rocket" OR "astronaut" OR "satellite" OR "Mars" OR "moon" OR "orbit" OR "telescope" OR "James Webb" OR "asteroid" OR "galaxy" OR "universe" OR "launch"',
+    required: ['space', 'NASA', 'SpaceX', 'rocket', 'astronaut', 'satellite', 'Mars', 'moon', 'orbit', 'telescope', 'James Webb', 'asteroid', 'galaxy', 'launch'],
+  },
+  tariffs: {
+    query: '"tariff" OR "trade war" OR "import tax" OR "trade policy" OR "trade deficit" OR "WTO" OR "trade deal" OR "customs" OR "export" OR "sanctions" OR "trade barrier" OR "supply chain"',
+    required: ['tariff', 'trade war', 'import tax', 'trade policy', 'trade deficit', 'WTO', 'trade deal', 'customs', 'export', 'sanctions', 'trade barrier', 'supply chain'],
+  },
+  technology: {
+    query: '"technology" OR "tech" OR "software" OR "hardware" OR "startup" OR "Silicon Valley" OR "Apple" OR "Google" OR "Microsoft" OR "Meta" OR "Amazon" OR "cybersecurity" OR "data privacy" OR "social media" OR "app"',
+    required: ['technology', 'tech', 'software', 'hardware', 'startup', 'Silicon Valley', 'Apple', 'Google', 'Microsoft', 'Meta', 'Amazon', 'cybersecurity', 'data privacy', 'social media', 'app'],
+  },
+  unicorns: {
+    query: '"good news" OR "heartwarming" OR "acts of kindness" OR "community hero" OR "animal rescue" OR "joyful" OR "wonder" OR "surprising discovery" OR "uplifting" OR "hope" OR "celebration" OR "breakthrough" OR "miracle"',
+    required: ['good news', 'heartwarming', 'kindness', 'hero', 'rescue', 'joyful', 'uplifting', 'hope', 'celebration', 'miracle', 'wonder', 'inspiring'],
+  },
+  vaccines: {
+    query: '"vaccine" OR "vaccination" OR "immunization" OR "booster" OR "anti-vax" OR "herd immunity" OR "mRNA" OR "Pfizer" OR "Moderna" OR "CDC vaccine" OR "measles" OR "polio" OR "flu shot"',
+    required: ['vaccine', 'vaccination', 'immunization', 'booster', 'anti-vax', 'herd immunity', 'mRNA', 'Pfizer', 'Moderna', 'measles', 'polio', 'flu shot'],
+  },
+  war: {
+    query: '"war" OR "conflict" OR "military" OR "troops" OR "bombing" OR "ceasefire" OR "invasion" OR "missile" OR "airstrike" OR "casualties" OR "battle" OR "frontline" OR "weapons" OR "NATO" OR "Pentagon"',
+    required: ['war', 'conflict', 'military', 'troops', 'bombing', 'ceasefire', 'invasion', 'missile', 'airstrike', 'casualties', 'battle', 'frontline', 'weapons', 'NATO', 'Pentagon'],
+  },
+  water: {
+    query: '"water" OR "drinking water" OR "water rights" OR "drought" OR "water crisis" OR "contamination" OR "flood" OR "river" OR "dam" OR "water supply" OR "aquifer" OR "water pollution" OR "clean water"',
+    required: ['water', 'drinking water', 'water rights', 'drought', 'water crisis', 'contamination', 'flood', 'river', 'dam', 'water supply', 'aquifer', 'pollution', 'clean water'],
+  },
+  work: {
+    query: '"work" OR "workplace" OR "job" OR "career" OR "remote work" OR "return to office" OR "four day week" OR "burnout" OR "workforce" OR "employment" OR "hiring" OR "firing" OR "resignation" OR "work life balance"',
+    required: ['work', 'workplace', 'job', 'career', 'remote work', 'return to office', 'four day week', 'burnout', 'workforce', 'employment', 'hiring', 'firing', 'resignation'],
+  },
 };
+
+/** Get query string for a topic. */
+function getTopicQuery(topic) {
+  return TOPIC_KEYWORDS[topic]?.query || topic;
+}
+
+/** Get required keywords for a topic. */
+function getRequiredKeywords(topics) {
+  const all = [];
+  for (const t of topics) {
+    if (TOPIC_KEYWORDS[t]?.required) all.push(...TOPIC_KEYWORDS[t].required);
+  }
+  return all;
+}
+
+/** Check if an article's title+description contain at least one required keyword (case-insensitive). */
+function passesRelevanceFilter(article, requiredKeywords) {
+  if (!requiredKeywords || requiredKeywords.length === 0) return true;
+  const text = ((article.title || '') + ' ' + (article.description || '')).toLowerCase();
+  return requiredKeywords.some(kw => text.includes(kw.toLowerCase()));
+}
+
+/** Get ISO date string N days ago. */
+function daysAgo(n) {
+  return new Date(Date.now() - n * 86_400_000).toISOString().split('T')[0];
+}
 
 // Map display source names to NewsAPI source IDs or domain fallbacks.
 const SOURCE_MAP = {
@@ -460,8 +573,8 @@ async function scrapeArticleText(url) {
 
 // ── Per-API fetchers (each returns normalized headline array) ──
 
-async function fetchNewsAPI(query, apiKey) {
-  const from = new Date(Date.now() - 7 * 86_400_000).toISOString().split('T')[0];
+async function fetchNewsAPI(query, apiKey, fromDate) {
+  const from = fromDate || daysAgo(3);
   const params = new URLSearchParams({
     q: query,
     sortBy: 'publishedAt',
@@ -508,7 +621,7 @@ async function fetchNewsAPI(query, apiKey) {
   return Promise.all(scrapePromises);
 }
 
-async function fetchGuardian(query, apiKey) {
+async function fetchGuardian(query, apiKey, fromDate) {
   if (!apiKey) return [];
   const params = new URLSearchParams({
     q: query,
@@ -516,6 +629,7 @@ async function fetchGuardian(query, apiKey) {
     'show-fields': 'headline,trailText,standfirst,byline,bodyText,body',
     'page-size': '15',
     'order-by': 'newest',
+    'from-date': fromDate || daysAgo(3),
   });
   console.log(`[Guardian] Fetching: q="${query.substring(0, 40)}…"`);
   const res = await fetch(`https://content.guardianapis.com/search?${params}`);
@@ -551,7 +665,7 @@ async function fetchGuardian(query, apiKey) {
   });
 }
 
-async function fetchGNews(query, apiKey) {
+async function fetchGNews(query, apiKey, fromDate) {
   if (!apiKey) return [];
   const params = new URLSearchParams({
     q: query,
@@ -559,6 +673,7 @@ async function fetchGNews(query, apiKey) {
     lang: 'en',
     max: '10',
     sortby: 'publishedAt',
+    from: fromDate || daysAgo(3),
   });
   console.log(`[GNews] Fetching: q="${query.substring(0, 40)}…"`);
   const res = await fetch(`https://gnews.io/api/v4/search?${params}`);
@@ -628,12 +743,12 @@ const LEAN_SOURCES = {
 };
 
 /** Make a targeted NewsAPI request for a specific lean. */
-async function fetchNewsAPIForLean(query, apiKey, lean) {
+async function fetchNewsAPIForLean(query, apiKey, lean, fromDate) {
   if (!apiKey) return [];
   const targets = LEAN_SOURCES[lean];
   if (!targets || targets.length === 0) return [];
   const pick = targets[Math.floor(Math.random() * targets.length)];
-  const from = new Date(Date.now() - 7 * 86_400_000).toISOString().split('T')[0];
+  const from = fromDate || daysAgo(3);
   const params = new URLSearchParams({
     q: query,
     sortBy: 'publishedAt',
@@ -672,18 +787,21 @@ async function handleMultiApiHeadlines(body) {
 
   console.log(`[multi-api] topics=${JSON.stringify(topics)}, APIs: NewsAPI=${newsapiKey ? 'yes' : 'no'}, Guardian=${guardianKey ? 'yes' : 'no'}, GNews=${gnewsKey ? 'yes' : 'no'}, NASA=${nasaKey ? 'yes' : 'no'}`);
 
-  // Phase 1: Broad fetch across all topics × all APIs + RSS + NASA in parallel
+  // Build combined required keywords for all selected topics
+  const requiredKeywords = getRequiredKeywords(topics);
+
+  // Phase 1: 3-day fetch across all topics × all APIs + RSS + NASA
+  const from3 = daysAgo(3);
   const fetches = [];
   for (const topic of topics) {
-    const query = TOPIC_QUERIES[topic] || topic;
+    const query = getTopicQuery(topic);
     fetches.push(
-      fetchNewsAPI(query, newsapiKey).catch(err => { console.error('[NewsAPI error]', err.message); return []; }),
-      fetchGuardian(query, guardianKey).catch(err => { console.error('[Guardian error]', err.message); return []; }),
-      fetchGNews(query, gnewsKey).catch(err => { console.error('[GNews error]', err.message); return []; }),
+      fetchNewsAPI(query, newsapiKey, from3).catch(err => { console.error('[NewsAPI error]', err.message); return []; }),
+      fetchGuardian(query, guardianKey, from3).catch(err => { console.error('[Guardian error]', err.message); return []; }),
+      fetchGNews(query, gnewsKey, from3).catch(err => { console.error('[GNews error]', err.message); return []; }),
     );
   }
 
-  // RSS feeds and NASA run in parallel with the API fetches
   const rssPromise = fetchRSSForTopics(topics).catch(err => { console.error('[RSS error]', err.message); return []; });
   const nasaPromise = isSpace ? fetchNASAApod(nasaKey).catch(err => { console.error('[NASA error]', err.message); return []; }) : Promise.resolve([]);
 
@@ -700,7 +818,7 @@ async function handleMultiApiHeadlines(body) {
     }
   }
 
-  console.log(`[multi-api] Raw API pool: ${pool.length}, RSS: ${rssArticles.length}, NASA: ${nasaArticles.length}`);
+  console.log(`[multi-api] Raw API pool (3-day): ${pool.length}, RSS: ${rssArticles.length}, NASA: ${nasaArticles.length}`);
 
   // For unicorns, RSS results go first so they get priority after dedup
   const rssPool = [...rssArticles, ...nasaArticles];
@@ -710,7 +828,7 @@ async function handleMultiApiHeadlines(body) {
     pool = [...pool, ...rssPool];
   }
 
-  // Deduplicate by lowercased title (first occurrence wins — order matters for unicorn priority)
+  // Deduplicate by lowercased title
   const seen = new Set();
   pool = pool.filter(hl => {
     if (!hl.title) return false;
@@ -720,7 +838,7 @@ async function handleMultiApiHeadlines(body) {
     return true;
   });
 
-  // Attach lean/short/textQuality metadata (RSS items already have lean/short)
+  // Attach lean/short/textQuality metadata
   pool = pool.map(hl => {
     if (!hl.lean || !hl.short) {
       const { lean, short } = lookupLean(hl.sourceName);
@@ -729,7 +847,16 @@ async function handleMultiApiHeadlines(body) {
     return { ...hl, textQuality: hl.textQuality || textQuality(hl) };
   });
 
-  // Log word counts and filter out articles with fewer than 50 words
+  // ── Strict relevance filter ──
+  let beforeFilter = pool.length;
+  pool = pool.filter(hl => {
+    if (passesRelevanceFilter(hl, requiredKeywords)) return true;
+    console.log(`[relevance] DROPPED: "${(hl.title || '').substring(0, 60)}" (${hl.sourceName})`);
+    return false;
+  });
+  console.log(`[relevance] ${pool.length} passed / ${beforeFilter - pool.length} dropped`);
+
+  // Filter out articles with fewer than 50 words
   pool = pool.filter(hl => {
     const text = hl.content || hl.description || '';
     const wc = wordCount(text);
@@ -740,7 +867,46 @@ async function handleMultiApiHeadlines(body) {
     }
     return true;
   });
-  console.log(`[multi-api] After 50-word filter: ${pool.length} headlines`);
+  console.log(`[multi-api] After filters (3-day): ${pool.length} headlines`);
+
+  // ── Phase 1b: If fewer than 3 articles, widen to 7 days ──
+  if (pool.length < 3) {
+    console.log(`[multi-api] Only ${pool.length} articles from 3-day window — widening to 7 days`);
+    const from7 = daysAgo(7);
+    const widerFetches = [];
+    for (const topic of topics) {
+      const query = getTopicQuery(topic);
+      widerFetches.push(
+        fetchNewsAPI(query, newsapiKey, from7).catch(() => []),
+        fetchGuardian(query, guardianKey, from7).catch(() => []),
+        fetchGNews(query, gnewsKey, from7).catch(() => []),
+      );
+    }
+    const widerResults = await Promise.allSettled(widerFetches);
+    let widerPool = [];
+    for (const r of widerResults) {
+      if (r.status === 'fulfilled' && Array.isArray(r.value)) widerPool.push(...r.value);
+    }
+    // Dedup against existing pool
+    widerPool = widerPool.filter(hl => {
+      if (!hl.title) return false;
+      const key = hl.title.toLowerCase().trim();
+      if (seen.has(key)) return false;
+      seen.add(key);
+      return true;
+    });
+    // Attach metadata + relevance filter
+    widerPool = widerPool.map(hl => {
+      if (!hl.lean || !hl.short) {
+        const { lean, short } = lookupLean(hl.sourceName);
+        return { ...hl, lean, short, textQuality: textQuality(hl) };
+      }
+      return { ...hl, textQuality: hl.textQuality || textQuality(hl) };
+    }).filter(hl => passesRelevanceFilter(hl, requiredKeywords))
+      .filter(hl => wordCount(hl.content || hl.description || '') >= 50);
+    pool.push(...widerPool);
+    console.log(`[multi-api] After 7-day fallback: ${pool.length} total headlines`);
+  }
 
   // Phase 2: Check lean balance — if any lean has < 3 articles, do targeted fetches
   const leanCounts = { left: 0, center: 0, right: 0 };
@@ -748,11 +914,11 @@ async function handleMultiApiHeadlines(body) {
   console.log(`[multi-api] Lean balance: L=${leanCounts.left}, C=${leanCounts.center}, R=${leanCounts.right}`);
 
   const balanceFetches = [];
-  const query0 = TOPIC_QUERIES[topics[0]] || topics[0];
+  const query0 = getTopicQuery(topics[0]);
   for (const lean of ['left', 'center', 'right']) {
     if (leanCounts[lean] < 3) {
       balanceFetches.push(
-        fetchNewsAPIForLean(query0, newsapiKey, lean)
+        fetchNewsAPIForLean(query0, newsapiKey, lean, daysAgo(7))
           .catch(err => { console.error(`[balance-${lean} error]`, err.message); return []; })
       );
     }
@@ -767,7 +933,10 @@ async function handleMultiApiHeadlines(body) {
           if (key && !seen.has(key)) {
             seen.add(key);
             const { lean, short } = lookupLean(hl.sourceName);
-            pool.push({ ...hl, lean, short, textQuality: textQuality(hl) });
+            const enriched = { ...hl, lean, short, textQuality: textQuality(hl) };
+            if (passesRelevanceFilter(enriched, requiredKeywords)) {
+              pool.push(enriched);
+            }
           }
         }
       }
@@ -775,9 +944,12 @@ async function handleMultiApiHeadlines(body) {
     console.log(`[multi-api] After balance: ${pool.length} headlines`);
   }
 
-  // Sort: prefer articles with more text (full > long > short)
-  const qualityOrder = { full: 0, long: 1, short: 2 };
-  pool.sort((a, b) => (qualityOrder[a.textQuality] || 2) - (qualityOrder[b.textQuality] || 2));
+  // Sort by publication date — newest first
+  pool.sort((a, b) => {
+    const da = a.publishedAt ? new Date(a.publishedAt).getTime() : 0;
+    const db = b.publishedAt ? new Date(b.publishedAt).getTime() : 0;
+    return db - da;
+  });
 
   // Build a balanced selection: pick up to 5 per lean, then fill remaining
   const byLean = { left: [], center: [], right: [], unicorn: [] };
@@ -920,7 +1092,7 @@ exports.handler = async (event) => {
     };
   }
 
-  const query = TOPIC_QUERIES[topic] || topic;
+  const query = getTopicQuery(topic);
   const mapping = SOURCE_MAP[source] || {};
   const from = new Date(Date.now() - 7 * 86_400_000).toISOString().split('T')[0];
 
