@@ -1,6 +1,7 @@
 import { getState } from './erasure.js';
 import { getPoemString } from './poem.js';
 import { getTheme } from './theme.js';
+import { getFascismWordsInPoem, getRedStringPositions } from './dostoevsky.js';
 
 let dateShort = '';
 let editionVolume = new Date().getMonth() + 1;
@@ -156,20 +157,22 @@ const CARD_THEMES = {
     cornerDeco: true,
   },
   dostoevsky: {
-    bg: '#1a1c20',
+    bg: '#0e1014',
     ruledLine: 'rgba(255,255,255,0.015)',
     border: '#2a2c30',
-    nameplateBg: '#8b2020',
+    nameplateBg: '#5a0a0a',
     nameplateText: '#d4d4d4',
     editionText: '#4a6fa5',
     ruleColor: '#2a2c30',
     metaText: '#6a6e78',
-    poemText: '#c8ccd4',
+    poemText: '#e8e8e8',
     footerRule: '#2a2c30',
     footerText: '#6a6e78',
     grainIntensity: 3,
     themeLabel: 'Dostoevsky Edition',
     crosshatch: true,
+    fascismColor: '#8b0000',
+    redString: true,
   },
 };
 
@@ -284,14 +287,55 @@ function renderCard(poem) {
   ctx.textAlign = 'center';
   ctx.fillText(layers.map(l => l.short).join(' \u00b7 ') + '   \u00b7   ' + dateShort, W / 2, 80);
 
-  // Poem
+  // Red string conspiracy lines (Dostoevsky)
+  if (t.redString) {
+    const positions = getRedStringPositions();
+    if (positions.length >= 2) {
+      ctx.save();
+      ctx.strokeStyle = 'rgba(139, 0, 0, 0.15)';
+      ctx.lineWidth = 0.5;
+      ctx.setLineDash([3, 3]);
+      const poemAreaTop = 90;
+      const poemAreaH = H - 130;
+      for (let i = 1; i < positions.length; i++) {
+        ctx.beginPath();
+        ctx.moveTo(40 + positions[i - 1].x * (W - 80), poemAreaTop + positions[i - 1].y * poemAreaH);
+        ctx.lineTo(40 + positions[i].x * (W - 80), poemAreaTop + positions[i].y * poemAreaH);
+        ctx.stroke();
+      }
+      ctx.restore();
+    }
+  }
+
+  // Poem — with fascism words in blood red for Dostoevsky
   const lines = poem.split('\n');
-  ctx.fillStyle = t.poemText;
+  const fascismWords = t.fascismColor ? getFascismWordsInPoem() : [];
   ctx.font = 'italic 17px Georgia, "Times New Roman", serif';
   const lh = 28;
   const totalH = lines.length * lh;
   let y = Math.max((H - totalH) / 2 + 16 + 28, 100);
-  lines.forEach(line => { ctx.fillText(line, W / 2, y); y += lh; });
+
+  if (fascismWords.length > 0) {
+    // Render word-by-word to color fascism words differently
+    lines.forEach(line => {
+      const words = line.split(/(\s+)/);
+      // Measure total width for centering
+      const fullWidth = ctx.measureText(line).width;
+      let x = (W - fullWidth) / 2;
+      words.forEach(word => {
+        const isFascism = fascismWords.some(fw => word.includes(fw));
+        ctx.fillStyle = isFascism ? t.fascismColor : t.poemText;
+        ctx.textAlign = 'left';
+        ctx.fillText(word, x, y);
+        x += ctx.measureText(word).width;
+      });
+      y += lh;
+    });
+    ctx.textAlign = 'center';
+  } else {
+    ctx.fillStyle = t.poemText;
+    lines.forEach(line => { ctx.fillText(line, W / 2, y); y += lh; });
+  }
 
   // Footer
   ctx.fillStyle = t.footerRule;
@@ -349,7 +393,7 @@ export async function downloadBlackout() {
 
   try {
     const theme = getTheme();
-    const bgColor = theme === 'dostoevsky' ? '#1a1c20' : theme === 'tolstoy' ? '#faf8f0' : '#fafaf7';
+    const bgColor = theme === 'dostoevsky' ? '#0e1014' : theme === 'tolstoy' ? '#faf8f0' : '#fafaf7';
     const html2canvas = await loadHtml2Canvas();
     const canvas = await html2canvas(wrapper, {
       backgroundColor: bgColor,
