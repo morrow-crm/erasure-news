@@ -135,9 +135,33 @@ body {
   border-radius: 2px;
   vertical-align: middle;
 }
+.lean-badge.lg {
+  font-size: 0.52rem;
+  padding: 0.15rem 0.4rem;
+}
 .lean-left   { background: #1a3a5a; }
 .lean-center { background: #2a4a2a; }
 .lean-right  { background: #5a1a1a; }
+
+.lean-label {
+  font-family: 'Courier Prime', monospace;
+  font-size: 0.44rem;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  vertical-align: middle;
+  margin-left: 0.15rem;
+}
+.lean-left-text   { color: #1a3a5a; }
+.lean-center-text { color: #2a4a2a; }
+.lean-right-text  { color: #5a1a1a; }
+
+.src-lean-label {
+  font-family: 'Courier Prime', monospace;
+  font-size: 0.46rem;
+  letter-spacing: 0.06em;
+  color: #b0a89e;
+  vertical-align: middle;
+}
 
 .setup-note {
   font-family: 'Courier Prime', monospace;
@@ -234,6 +258,21 @@ body {
 .hl-card.disabled {
   opacity: 0.4;
   cursor: not-allowed;
+}
+.hl-card.suggested {
+  background: var(--offwhite);
+  border-color: var(--col-rule);
+  box-shadow: inset 0 0 0 1px var(--col-rule);
+}
+.hl-card.suggested::before {
+  content: 'Suggested for balance';
+  display: block;
+  font-family: 'Courier Prime', monospace;
+  font-size: 0.42rem;
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+  color: #2a4a2a;
+  margin-bottom: 0.3rem;
 }
 
 .hl-card-source {
@@ -384,6 +423,22 @@ body {
   line-height: 1.88;
   color: var(--ink);
 }
+.art-full-link {
+  font-family: 'Courier Prime', monospace;
+  font-size: 0.56rem;
+  letter-spacing: 0.04em;
+  color: var(--muted);
+  margin-top: 1.2rem;
+  padding-top: 0.6rem;
+  border-top: 1px solid var(--col-rule);
+  user-select: none;
+}
+.art-full-link a {
+  color: var(--muted);
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+.art-full-link a:hover { color: var(--ink); }
 
 /* ── WORDS ── */
 .w {

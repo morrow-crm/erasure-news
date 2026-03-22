@@ -144,7 +144,7 @@ async function fetchGuardian(query, apiKey) {
   const params = new URLSearchParams({
     q: query,
     'api-key': apiKey,
-    'show-fields': 'headline,trailText,byline',
+    'show-fields': 'headline,trailText,byline,body',
     'page-size': '15',
     'order-by': 'newest',
   });
@@ -156,15 +156,19 @@ async function fetchGuardian(query, apiKey) {
     return [];
   }
   console.log(`[Guardian] Got ${data.response.results.length} results`);
-  return data.response.results.map(r => ({
-    title: r.fields?.headline || r.webTitle || 'Untitled',
-    description: r.fields?.trailText || '',
-    content: '',
-    author: r.fields?.byline || 'Guardian Staff',
-    sourceName: 'The Guardian',
-    publishedAt: r.webPublicationDate,
-    url: r.webUrl,
-  }));
+  return data.response.results.map(r => {
+    // Strip HTML tags from body text
+    const rawBody = (r.fields?.body || '').replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim();
+    return {
+      title: r.fields?.headline || r.webTitle || 'Untitled',
+      description: r.fields?.trailText || '',
+      content: rawBody,
+      author: r.fields?.byline || 'Guardian Staff',
+      sourceName: 'The Guardian',
+      publishedAt: r.webPublicationDate,
+      url: r.webUrl,
+    };
+  });
 }
 
 async function fetchGNews(query, apiKey) {
@@ -195,6 +199,15 @@ async function fetchGNews(query, apiKey) {
   }));
 }
 
+/** Classify text quality: 'full' (>500 chars), 'long' (>200), or 'short'. */
+function textQuality(hl) {
+  const contentLen = (hl.content || '').length;
+  const descLen = (hl.description || '').length;
+  if (contentLen > 500) return 'full';
+  if (contentLen > 200 || descLen > 200) return 'long';
+  return 'short';
+}
+
 /** Fisher-Yates shuffle (in-place). */
 function shuffle(arr) {
   for (let i = arr.length - 1; i > 0; i--) {
@@ -204,17 +217,71 @@ function shuffle(arr) {
   return arr;
 }
 
+// Sources grouped by lean for targeted balance requests via NewsAPI.
+const LEAN_SOURCES = {
+  left:   [
+    { sources: 'the-guardian-us' },
+    { domains: 'nytimes.com' },
+    { sources: 'the-washington-post' },
+    { sources: 'npr' },
+  ],
+  center: [
+    { sources: 'associated-press' },
+    { sources: 'reuters' },
+    { sources: 'bloomberg' },
+    { domains: 'politico.com' },
+  ],
+  right:  [
+    { sources: 'fox-news' },
+    { domains: 'nypost.com' },
+    { sources: 'the-wall-street-journal' },
+    { sources: 'national-review' },
+  ],
+};
+
+/** Make a targeted NewsAPI request for a specific lean. */
+async function fetchNewsAPIForLean(query, apiKey, lean) {
+  if (!apiKey) return [];
+  const targets = LEAN_SOURCES[lean];
+  if (!targets || targets.length === 0) return [];
+  const pick = targets[Math.floor(Math.random() * targets.length)];
+  const from = new Date(Date.now() - 7 * 86_400_000).toISOString().split('T')[0];
+  const params = new URLSearchParams({
+    q: query,
+    sortBy: 'publishedAt',
+    pageSize: '5',
+    language: 'en',
+    from,
+    apiKey,
+  });
+  if (pick.sources) params.set('sources', pick.sources);
+  else if (pick.domains) params.set('domains', pick.domains);
+  console.log(`[NewsAPI-${lean}] Targeted fetch for balance`);
+  const res = await fetch(`https://newsapi.org/v2/everything?${params}`);
+  const data = await res.json();
+  if (data.status !== 'ok' || !data.articles) return [];
+  return data.articles.map(a => ({
+    title: a.title,
+    description: (a.description || '').trim(),
+    content: cleanContent(a.content),
+    author: a.author || 'Staff Reporter',
+    sourceName: a.source?.name || 'News',
+    publishedAt: a.publishedAt,
+    url: a.url,
+  }));
+}
+
 // ── Multi-API headlines handler ──
 
 async function handleMultiApiHeadlines(body) {
-  const { topics, dateStr } = body;
+  const { topics } = body;
   const newsapiKey = process.env.NEWSAPI_KEY;
   const guardianKey = process.env.GUARDIAN_KEY;
   const gnewsKey = process.env.GNEWS_KEY;
 
   console.log(`[multi-api] topics=${JSON.stringify(topics)}, APIs: NewsAPI=${newsapiKey ? 'yes' : 'no'}, Guardian=${guardianKey ? 'yes' : 'no'}, GNews=${gnewsKey ? 'yes' : 'no'}`);
 
-  // Build all fetch promises across all topics × all APIs
+  // Phase 1: Broad fetch across all topics × all APIs
   const fetches = [];
   for (const topic of topics) {
     const query = TOPIC_QUERIES[topic] || topic;
@@ -245,17 +312,71 @@ async function handleMultiApiHeadlines(body) {
     return true;
   });
 
-  // Attach lean/short metadata
+  // Attach lean/short/textQuality metadata
   pool = pool.map(hl => {
     const { lean, short } = lookupLean(hl.sourceName);
-    return { ...hl, lean, short };
+    return { ...hl, lean, short, textQuality: textQuality(hl) };
   });
 
-  // Shuffle and cap
-  shuffle(pool);
-  const headlines = pool.slice(0, 15);
+  // Phase 2: Check lean balance — if any lean has < 3 articles, do targeted fetches
+  const leanCounts = { left: 0, center: 0, right: 0 };
+  pool.forEach(hl => { if (leanCounts[hl.lean] !== undefined) leanCounts[hl.lean]++; });
+  console.log(`[multi-api] Lean balance: L=${leanCounts.left}, C=${leanCounts.center}, R=${leanCounts.right}`);
 
-  console.log(`[multi-api] Returning ${headlines.length} headlines`);
+  const balanceFetches = [];
+  const query0 = TOPIC_QUERIES[topics[0]] || topics[0];
+  for (const lean of ['left', 'center', 'right']) {
+    if (leanCounts[lean] < 3) {
+      balanceFetches.push(
+        fetchNewsAPIForLean(query0, newsapiKey, lean)
+          .catch(err => { console.error(`[balance-${lean} error]`, err.message); return []; })
+      );
+    }
+  }
+
+  if (balanceFetches.length > 0) {
+    const balanceResults = await Promise.allSettled(balanceFetches);
+    for (const r of balanceResults) {
+      if (r.status === 'fulfilled' && Array.isArray(r.value)) {
+        for (const hl of r.value) {
+          const key = hl.title?.toLowerCase().trim();
+          if (key && !seen.has(key)) {
+            seen.add(key);
+            const { lean, short } = lookupLean(hl.sourceName);
+            pool.push({ ...hl, lean, short, textQuality: textQuality(hl) });
+          }
+        }
+      }
+    }
+    console.log(`[multi-api] After balance: ${pool.length} headlines`);
+  }
+
+  // Sort: prefer articles with more text (full > long > short)
+  const qualityOrder = { full: 0, long: 1, short: 2 };
+  pool.sort((a, b) => (qualityOrder[a.textQuality] || 2) - (qualityOrder[b.textQuality] || 2));
+
+  // Build a balanced selection: pick up to 5 per lean, then fill remaining
+  const byLean = { left: [], center: [], right: [] };
+  const overflow = [];
+  for (const hl of pool) {
+    if (byLean[hl.lean] && byLean[hl.lean].length < 5) {
+      byLean[hl.lean].push(hl);
+    } else {
+      overflow.push(hl);
+    }
+  }
+
+  let headlines = [...byLean.left, ...byLean.center, ...byLean.right];
+  // Fill to 15 from overflow
+  for (const hl of overflow) {
+    if (headlines.length >= 15) break;
+    headlines.push(hl);
+  }
+
+  shuffle(headlines);
+  headlines = headlines.slice(0, 15);
+
+  console.log(`[multi-api] Returning ${headlines.length} headlines (L=${headlines.filter(h=>h.lean==='left').length}, C=${headlines.filter(h=>h.lean==='center').length}, R=${headlines.filter(h=>h.lean==='right').length})`);
 
   return {
     statusCode: 200,

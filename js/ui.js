@@ -68,9 +68,10 @@ export function renderHeadlineCards(headlines, onClickCallback) {
 
     const leanLabel = { left: 'L', center: 'C', right: 'R' }[hl.sourceObj?.lean] || '';
     const leanClass = hl.sourceObj?.lean ? `lean-${hl.sourceObj.lean}` : '';
+    const leanFull = { left: 'Left', center: 'Center', right: 'Right' }[hl.sourceObj?.lean] || '';
 
     card.innerHTML = `
-      <div class="hl-card-source">${leanLabel ? `<span class="lean-badge ${leanClass}">${leanLabel}</span> ` : ''}${h(hl.sourceName)}</div>
+      <div class="hl-card-source"><span class="lean-badge lg ${leanClass}">${leanLabel}</span> ${h(hl.sourceName)} <span class="lean-label ${leanClass}-text">${leanFull}</span></div>
       <div class="hl-card-title">${h(hl.title)}</div>
       <div class="hl-card-desc">${h(hl.description)}</div>
       <div class="hl-card-meta">${h(hl.author)} &middot; ${dateStr}</div>
