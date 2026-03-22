@@ -38,7 +38,7 @@ function updateCount() {
     el.textContent = 'Select 1\u20133 stories for erasure';
   } else {
     const leans = [...selectedIndices].map(i => headlineData[i]?.sourceObj?.lean).filter(Boolean);
-    const leanSummary = leans.map(l => ({ left: 'L', center: 'C', right: 'R' }[l] || '?')).join(' ');
+    const leanSummary = leans.map(l => ({ left: 'L', center: 'C', right: 'R', unicorn: '\u2726' }[l] || '?')).join(' ');
     el.textContent = `${selectedIndices.size} of 3 selected \u00B7 ${leanSummary}`;
   }
 }

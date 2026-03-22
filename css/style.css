@@ -139,9 +139,10 @@ body {
   font-size: 0.52rem;
   padding: 0.15rem 0.4rem;
 }
-.lean-left   { background: #1a3a5a; }
-.lean-center { background: #2a4a2a; }
-.lean-right  { background: #5a1a1a; }
+.lean-left    { background: #1a3a5a; }
+.lean-center  { background: #2a4a2a; }
+.lean-right   { background: #5a1a1a; }
+.lean-unicorn { background: #6b4c9a; }
 
 .lean-label {
   font-family: 'Courier Prime', monospace;
@@ -151,9 +152,10 @@ body {
   vertical-align: middle;
   margin-left: 0.15rem;
 }
-.lean-left-text   { color: #1a3a5a; }
-.lean-center-text { color: #2a4a2a; }
-.lean-right-text  { color: #5a1a1a; }
+.lean-left-text    { color: #1a3a5a; }
+.lean-center-text  { color: #2a4a2a; }
+.lean-right-text   { color: #5a1a1a; }
+.lean-unicorn-text { color: #6b4c9a; }
 
 .src-lean-label {
   font-family: 'Courier Prime', monospace;
