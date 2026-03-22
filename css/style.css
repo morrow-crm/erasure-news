@@ -749,154 +749,368 @@ body {
 
 /* ── TOLSTOY THEME ── */
 .theme-tolstoy #workspace {
-  --black:  #2c3e2a;
-  --ink:    #3d2b1f;
-  --paper:  #faf6ed;
-  --offwhite: #f0ece0;
-  --rule:   #5a7a54;
-  --col-rule: #a8c4a0;
+  --black:  #3a5c28;
+  --ink:    #2d4a1e;
+  --paper:  #faf8f0;
+  --offwhite: #f2f0e6;
+  --rule:   #8aaa6a;
+  --col-rule: #8aaa6a;
   --muted:  #6b7a5e;
 }
 
 .theme-tolstoy #workspace .w.erased {
-  background: #2c4a28 !important;
-  color: #2c4a28 !important;
-  box-shadow: 0 -1px 0 #2c4a28, 0 2px 0 #2c4a28;
+  background: #3a5c28 !important;
+  color: #3a5c28 !important;
+  box-shadow: 0 -1px 0 #3a5c28, 0 2px 0 #3a5c28;
 }
 .theme-tolstoy #workspace .w.kept {
-  outline-color: #c49a3c;
+  outline: none;
+  border-bottom: 2px solid #c17f24;
+  background: rgba(232, 197, 71, 0.10);
+  border-radius: 0;
 }
 .theme-tolstoy #workspace .art-hed {
+  color: #2d4a1e;
+}
+.theme-tolstoy #workspace .art-body {
   color: #3d2b1f;
 }
+.theme-tolstoy #workspace .art-byline {
+  color: #8aaa6a;
+  border-bottom-color: #8aaa6a;
+}
+.theme-tolstoy #workspace .art-kicker {
+  color: #6b7a5e;
+}
+.theme-tolstoy #workspace .src-tag {
+  color: #8aaa6a;
+}
 .theme-tolstoy #workspace .poem-panel {
-  background: #f0f7ed;
-  border-bottom-color: #5a7a54;
+  background: #f0f7ee;
+  border-bottom-color: #8aaa6a;
+  border-left: 3px solid #8aaa6a;
+  box-shadow: -3px 0 12px rgba(138,170,106,0.15);
 }
 .theme-tolstoy #workspace .poem-head {
   background: #eaf2e6;
-  border-bottom-color: #5a7a54;
+  border-bottom-color: #8aaa6a;
+}
+.theme-tolstoy #workspace .poem-kicker {
+  color: #6b7a5e;
 }
 .theme-tolstoy #workspace #poem-display {
-  color: #2c4a28;
+  color: #2d4a1e;
 }
 .theme-tolstoy #workspace .ws-instruct {
   background: #eef4ea;
+  border-bottom-color: #8aaa6a;
 }
 .theme-tolstoy #workspace .article-col {
-  background: #faf6ed;
+  background: #faf8f0;
+  position: relative;
+}
+.theme-tolstoy #workspace .article-wrapper {
+  border-bottom-color: #8aaa6a;
+  position: relative;
+}
+/* Faint botanical watermark background */
+.theme-tolstoy #workspace .article-wrapper::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: 0;
+  background:
+    radial-gradient(ellipse at 5% 8%, rgba(138,170,106,0.06) 0%, transparent 40%),
+    radial-gradient(ellipse at 95% 12%, rgba(232,197,71,0.04) 0%, transparent 35%),
+    radial-gradient(ellipse at 8% 92%, rgba(232,197,71,0.05) 0%, transparent 30%),
+    radial-gradient(ellipse at 92% 88%, rgba(138,170,106,0.05) 0%, transparent 35%);
+}
+/* Botanical corner SVGs */
+.theme-tolstoy #workspace .article-wrapper::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: 1;
+  background-image:
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='60' height='60' viewBox='0 0 60 60'%3E%3Cpath d='M5 55 Q8 40 15 35 Q22 30 28 32' fill='none' stroke='%238aaa6a' stroke-width='0.8' opacity='0.2'/%3E%3Cpath d='M12 50 Q15 42 20 40 Q18 38 14 40 Q10 42 12 50Z' fill='%238aaa6a' opacity='0.06'/%3E%3Cpath d='M20 48 Q24 40 30 38 Q26 36 22 39 Q18 42 20 48Z' fill='%238aaa6a' opacity='0.05'/%3E%3C/svg%3E"),
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='60' height='60' viewBox='0 0 60 60'%3E%3Cpath d='M55 55 Q52 40 45 35 Q38 30 32 32' fill='none' stroke='%238aaa6a' stroke-width='0.8' opacity='0.2'/%3E%3Cpath d='M48 50 Q45 42 40 40 Q42 38 46 40 Q50 42 48 50Z' fill='%238aaa6a' opacity='0.06'/%3E%3C/svg%3E"),
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='60' height='60' viewBox='0 0 60 60'%3E%3Cpath d='M5 5 Q8 20 15 25 Q22 30 28 28' fill='none' stroke='%238aaa6a' stroke-width='0.8' opacity='0.15'/%3E%3Cpath d='M12 10 Q15 18 20 20 Q18 22 14 20 Q10 18 12 10Z' fill='%238aaa6a' opacity='0.05'/%3E%3C/svg%3E"),
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='60' height='60' viewBox='0 0 60 60'%3E%3Cpath d='M55 5 Q52 20 45 25 Q38 30 32 28' fill='none' stroke='%238aaa6a' stroke-width='0.8' opacity='0.15'/%3E%3C/svg%3E");
+  background-position: bottom left, bottom right, top left, top right;
+  background-repeat: no-repeat;
+  background-size: 60px 60px;
+}
+.theme-tolstoy #workspace .fmt-btn {
+  border-color: #8aaa6a;
+  color: #6b7a5e;
+}
+.theme-tolstoy #workspace .fmt-btn:hover {
+  border-color: #2d4a1e;
+  color: #2d4a1e;
+}
+.theme-tolstoy #workspace .abtn {
+  border-color: #8aaa6a;
+  color: #6b7a5e;
+}
+.theme-tolstoy #workspace .abtn:hover {
+  border-color: #2d4a1e;
+  color: #2d4a1e;
+}
+.theme-tolstoy #workspace .abtn.primary {
+  background: #3a5c28;
+  border-color: #3a5c28;
+  color: #faf8f0;
+}
+.theme-tolstoy #workspace .poem-toolbar {
+  border-bottom-color: #8aaa6a;
+}
+
+/* ── TOLSTOY BUTTERFLIES ── */
+
+/* Butterfly wrapper — fixed position, generous hit area */
+.butterfly {
+  position: absolute;
+  z-index: 100;
+  width: 44px;
+  height: 44px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  pointer-events: auto;
+  -webkit-tap-highlight-color: transparent;
+}
+.bf-svg {
+  overflow: visible;
+  filter: drop-shadow(0 1px 2px rgba(0,0,0,0.1));
+}
+
+/* Wing flap animation — speed controlled by --flap-speed */
+.bf-wings {
+  transform-origin: 20px 20px;
+  animation: bf-flap var(--flap-speed, 0.25s) ease-in-out infinite alternate;
+}
+@keyframes bf-flap {
+  0%   { transform: scaleX(1); }
+  100% { transform: scaleX(0.3); }
+}
+
+/* Floating drift — gentle sinusoidal path */
+.bf-floating {
+  animation: bf-drift 12s ease-in-out infinite alternate;
+  --flap-speed: 0.25s;
+}
+@keyframes bf-drift {
+  0%   { transform: translate(0, 0) rotate(-3deg); }
+  25%  { transform: translate(30px, -18px) rotate(4deg); }
+  50%  { transform: translate(-20px, -30px) rotate(-2deg); }
+  75%  { transform: translate(15px, 10px) rotate(5deg); }
+  100% { transform: translate(-10px, -8px) rotate(-4deg); }
+}
+
+/* Flying to word — override drift */
+.bf-flying {
+  animation: none !important;
+  transition: none;
+}
+
+/* Resting on word — slow, gentle wing movement */
+.bf-resting {
+  animation: none !important;
+  --flap-speed: 0.8s;
+}
+
+/* Spin-away when no target available */
+.bf-spin {
+  animation: bf-spin-away 0.8s ease-in-out;
+}
+@keyframes bf-spin-away {
+  0%   { transform: rotate(0deg) scale(1); }
+  50%  { transform: rotate(360deg) scale(0.7); }
+  100% { transform: rotate(720deg) scale(1); }
+}
+
+/* Butterfly color variants — wing fill */
+.bf-yellow .bf-wing-l, .bf-yellow .bf-wing-r { fill: #e8c94a; }
+.bf-yellow .bf-svg { color: #b89830; }
+.bf-blue .bf-wing-l, .bf-blue .bf-wing-r { fill: #7db8d4; }
+.bf-blue .bf-svg { color: #4a7f9a; }
+.bf-orange .bf-wing-l, .bf-orange .bf-wing-r { fill: #e8914a; }
+.bf-orange .bf-svg { color: #b06830; }
+.bf-white .bf-wing-l, .bf-white .bf-wing-r { fill: #e0e8d8; }
+.bf-white .bf-svg { color: #8aaa78; }
+.bf-pink .bf-wing-l, .bf-pink .bf-wing-r { fill: #e4a0aa; }
+.bf-pink .bf-svg { color: #b06878; }
+
+/* Wing inner detail — subtle vein pattern */
+.bf-wing-l, .bf-wing-r {
+  opacity: 0.85;
+  stroke: rgba(0,0,0,0.08);
+  stroke-width: 0.3;
+}
+
+/* Transformed word styling */
+.bf-transformed {
+  position: relative;
+  font-style: italic;
+  font-weight: 600;
+}
+.bf-word-dot {
+  position: absolute;
+  bottom: -3px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 3px;
+  height: 3px;
+  border-radius: 50%;
+  pointer-events: none;
+}
+
+/* Pollen / pixie dust particles */
+.bf-pollen {
+  position: fixed;
+  width: 4px;
+  height: 4px;
+  border-radius: 50%;
+  pointer-events: none;
+  z-index: 200;
+  animation: bf-pollen-rise 0.8s ease-out forwards;
+  opacity: 0.8;
+}
+@keyframes bf-pollen-rise {
+  0%   { transform: translate(0, 0) scale(1); opacity: 0.8; }
+  100% { transform: translate(var(--dx, 0), var(--dy, -30px)) scale(0.3); opacity: 0; }
 }
 
 /* ── DOSTOEVSKY THEME ── */
 .theme-dostoevsky #workspace {
-  --black:  #0a0a0e;
-  --ink:    #c8c4be;
-  --paper:  #151518;
-  --offwhite: #1a1a1f;
-  --rule:   #2a2a32;
-  --col-rule: #222228;
-  --muted:  #6a6a74;
+  --black:  #080808;
+  --ink:    #b0b4bc;
+  --paper:  #1a1c20;
+  --offwhite: #1e2026;
+  --rule:   #2a2c30;
+  --col-rule: #2a2c30;
+  --muted:  #6a6e78;
 }
 
 .theme-dostoevsky #workspace .w {
-  color: #b0aead;
+  color: #b0b4bc;
 }
 .theme-dostoevsky #workspace .w:hover {
-  background: rgba(255,255,255,0.06);
+  background: rgba(255,255,255,0.05);
 }
 .theme-dostoevsky #workspace .w.erased {
-  background: #0a0a0e !important;
-  color: #0a0a0e !important;
-  box-shadow: 0 -1px 0 #0a0a0e, 0 2px 0 #0a0a0e;
+  background: #080808 !important;
+  color: #080808 !important;
+  box-shadow: 0 -1px 0 #080808, 0 2px 0 #080808;
 }
 .theme-dostoevsky #workspace .w.kept {
-  outline-color: #4a6a8a;
+  outline-color: #4a6fa5;
 }
 .theme-dostoevsky #workspace .art-hed {
-  color: #d8d4ce;
+  color: #d4d4d4;
   font-weight: 900;
 }
 .theme-dostoevsky #workspace .art-body {
-  color: #a0a0a8;
+  color: #b0b4bc;
 }
 .theme-dostoevsky #workspace .art-byline {
-  color: #5a5a64;
-  border-bottom-color: #2a2a32;
+  color: #5a5e68;
+  border-bottom-color: #2a2c30;
 }
 .theme-dostoevsky #workspace .art-kicker {
-  color: #5a5a64;
+  color: #5a5e68;
 }
 .theme-dostoevsky #workspace .src-tag {
-  color: #3a3a44;
+  color: #3a3e48;
 }
 .theme-dostoevsky #workspace .lean-badge {
-  opacity: 0.7;
+  opacity: 0.6;
 }
 .theme-dostoevsky #workspace .article-col {
-  background: #151518;
+  background: #1a1c20;
 }
 .theme-dostoevsky #workspace .article-col + .article-col {
-  border-left-color: #1e1e24;
-}
-.theme-dostoevsky #workspace .poem-panel {
-  background: #111116;
-  border-bottom-color: #2a2a32;
-}
-.theme-dostoevsky #workspace .poem-head {
-  background: #131318;
-  border-bottom-color: #2a2a32;
-}
-.theme-dostoevsky #workspace .poem-kicker {
-  color: #5a5a64;
-}
-.theme-dostoevsky #workspace .poem-rule {
-  background: #222228;
-}
-.theme-dostoevsky #workspace #poem-display {
-  color: #c0beb8;
-}
-.theme-dostoevsky #workspace #poem-display:empty::before {
-  color: #3a3a44;
-}
-.theme-dostoevsky #workspace .poem-toolbar {
-  border-bottom-color: #222228;
-}
-.theme-dostoevsky #workspace .fmt-btn {
-  border-color: #2a2a32;
-  color: #5a5a64;
-}
-.theme-dostoevsky #workspace .fmt-btn:hover {
-  border-color: #4a4a54;
-  color: #8a8a94;
-}
-.theme-dostoevsky #workspace .abtn {
-  border-color: #2a2a32;
-  color: #5a5a64;
-}
-.theme-dostoevsky #workspace .abtn:hover {
-  border-color: #4a4a54;
-  color: #8a8a94;
-}
-.theme-dostoevsky #workspace .abtn.primary {
-  background: #2a2a32;
-  border-color: #2a2a32;
-  color: #c0beb8;
-}
-.theme-dostoevsky #workspace .ws-instruct {
-  background: #131318;
-  border-bottom-color: #2a2a32;
-}
-.theme-dostoevsky #workspace .instruct-flag {
-  color: #6a6a74;
-}
-.theme-dostoevsky #workspace .instruct-copy {
-  color: #5a5a64;
-}
-.theme-dostoevsky #workspace .instruct-copy strong {
-  color: #8a8a94;
+  border-left-color: #2a2c30;
 }
 .theme-dostoevsky #workspace .article-wrapper {
-  border-bottom-color: #2a2a32;
+  border-bottom-color: #2a2c30;
+  position: relative;
+}
+/* Faint crosshatch texture — prison bars / heavy rain */
+.theme-dostoevsky #workspace .article-wrapper::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: 0;
+  opacity: 0.035;
+  background-image: repeating-linear-gradient(
+    90deg,
+    transparent,
+    transparent 6px,
+    #4a6fa5 6px,
+    #4a6fa5 7px
+  );
+}
+.theme-dostoevsky #workspace .poem-panel {
+  background: #12141a;
+  border-bottom-color: #2a2c30;
+}
+.theme-dostoevsky #workspace .poem-head {
+  background: #14161c;
+  border-bottom-color: #2a2c30;
+}
+.theme-dostoevsky #workspace .poem-kicker {
+  color: #5a5e68;
+}
+.theme-dostoevsky #workspace .poem-rule {
+  background: #2a2c30;
+}
+.theme-dostoevsky #workspace #poem-display {
+  color: #c8ccd4;
+}
+.theme-dostoevsky #workspace #poem-display:empty::before {
+  color: #3a3e48;
+}
+.theme-dostoevsky #workspace .poem-toolbar {
+  border-bottom-color: #2a2c30;
+}
+.theme-dostoevsky #workspace .fmt-btn {
+  border-color: #2a2c30;
+  color: #5a5e68;
+}
+.theme-dostoevsky #workspace .fmt-btn:hover {
+  border-color: #4a6fa5;
+  color: #8a8e98;
+}
+.theme-dostoevsky #workspace .abtn {
+  border-color: #2a2c30;
+  color: #5a5e68;
+}
+.theme-dostoevsky #workspace .abtn:hover {
+  border-color: #4a6fa5;
+  color: #8a8e98;
+}
+.theme-dostoevsky #workspace .abtn.primary {
+  background: #8b2020;
+  border-color: #8b2020;
+  color: #c8ccd4;
+}
+.theme-dostoevsky #workspace .ws-instruct {
+  background: #14161c;
+  border-bottom-color: #2a2c30;
+}
+.theme-dostoevsky #workspace .instruct-flag {
+  color: #6a6e78;
+}
+.theme-dostoevsky #workspace .instruct-copy {
+  color: #5a5e68;
+}
+.theme-dostoevsky #workspace .instruct-copy strong {
+  color: #8a8e98;
 }
 
 /* ── MOBILE RESPONSIVE ── */
