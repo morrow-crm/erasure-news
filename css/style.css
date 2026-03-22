@@ -691,6 +691,198 @@ body {
   text-align: center;
 }
 
+/* ── THEME SELECTOR ── */
+.theme-selector {
+  display: flex;
+  align-items: center;
+  gap: 0.8rem;
+  padding: 0.6rem 0;
+  margin-bottom: 0.5rem;
+  border-top: 1px solid var(--col-rule);
+}
+.theme-label {
+  font-family: 'Courier Prime', monospace;
+  font-size: 0.52rem;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--muted);
+  white-space: nowrap;
+}
+.theme-options { display: flex; align-items: center; gap: 0.4rem; }
+.theme-dot {
+  font-size: 0.5rem;
+  color: var(--col-rule);
+}
+.theme-btn {
+  font-family: 'Courier Prime', monospace;
+  font-size: 0.58rem;
+  letter-spacing: 0.06em;
+  padding: 0.3rem 0.7rem;
+  border: 1px solid transparent;
+  background: transparent;
+  color: var(--muted);
+  cursor: pointer;
+  transition: all 0.15s;
+}
+.theme-btn:hover { color: var(--ink); border-color: var(--col-rule); }
+.theme-btn.active {
+  border-color: var(--ink);
+  color: var(--ink);
+  font-weight: 700;
+}
+
+/* ── TOLSTOY THEME ── */
+.theme-tolstoy #workspace {
+  --black:  #2c3e2a;
+  --ink:    #3d2b1f;
+  --paper:  #faf6ed;
+  --offwhite: #f0ece0;
+  --rule:   #5a7a54;
+  --col-rule: #a8c4a0;
+  --muted:  #6b7a5e;
+}
+
+.theme-tolstoy #workspace .w.erased {
+  background: #2c4a28 !important;
+  color: #2c4a28 !important;
+  box-shadow: 0 -1px 0 #2c4a28, 0 2px 0 #2c4a28;
+}
+.theme-tolstoy #workspace .w.kept {
+  outline-color: #c49a3c;
+}
+.theme-tolstoy #workspace .art-hed {
+  color: #3d2b1f;
+}
+.theme-tolstoy #workspace .poem-panel {
+  background: #f0f7ed;
+  border-bottom-color: #5a7a54;
+}
+.theme-tolstoy #workspace .poem-head {
+  background: #eaf2e6;
+  border-bottom-color: #5a7a54;
+}
+.theme-tolstoy #workspace #poem-display {
+  color: #2c4a28;
+}
+.theme-tolstoy #workspace .ws-instruct {
+  background: #eef4ea;
+}
+.theme-tolstoy #workspace .article-col {
+  background: #faf6ed;
+}
+
+/* ── DOSTOEVSKY THEME ── */
+.theme-dostoevsky #workspace {
+  --black:  #0a0a0e;
+  --ink:    #c8c4be;
+  --paper:  #151518;
+  --offwhite: #1a1a1f;
+  --rule:   #2a2a32;
+  --col-rule: #222228;
+  --muted:  #6a6a74;
+}
+
+.theme-dostoevsky #workspace .w {
+  color: #b0aead;
+}
+.theme-dostoevsky #workspace .w:hover {
+  background: rgba(255,255,255,0.06);
+}
+.theme-dostoevsky #workspace .w.erased {
+  background: #0a0a0e !important;
+  color: #0a0a0e !important;
+  box-shadow: 0 -1px 0 #0a0a0e, 0 2px 0 #0a0a0e;
+}
+.theme-dostoevsky #workspace .w.kept {
+  outline-color: #4a6a8a;
+}
+.theme-dostoevsky #workspace .art-hed {
+  color: #d8d4ce;
+  font-weight: 900;
+}
+.theme-dostoevsky #workspace .art-body {
+  color: #a0a0a8;
+}
+.theme-dostoevsky #workspace .art-byline {
+  color: #5a5a64;
+  border-bottom-color: #2a2a32;
+}
+.theme-dostoevsky #workspace .art-kicker {
+  color: #5a5a64;
+}
+.theme-dostoevsky #workspace .src-tag {
+  color: #3a3a44;
+}
+.theme-dostoevsky #workspace .lean-badge {
+  opacity: 0.7;
+}
+.theme-dostoevsky #workspace .article-col {
+  background: #151518;
+}
+.theme-dostoevsky #workspace .article-col + .article-col {
+  border-left-color: #1e1e24;
+}
+.theme-dostoevsky #workspace .poem-panel {
+  background: #111116;
+  border-bottom-color: #2a2a32;
+}
+.theme-dostoevsky #workspace .poem-head {
+  background: #131318;
+  border-bottom-color: #2a2a32;
+}
+.theme-dostoevsky #workspace .poem-kicker {
+  color: #5a5a64;
+}
+.theme-dostoevsky #workspace .poem-rule {
+  background: #222228;
+}
+.theme-dostoevsky #workspace #poem-display {
+  color: #c0beb8;
+}
+.theme-dostoevsky #workspace #poem-display:empty::before {
+  color: #3a3a44;
+}
+.theme-dostoevsky #workspace .poem-toolbar {
+  border-bottom-color: #222228;
+}
+.theme-dostoevsky #workspace .fmt-btn {
+  border-color: #2a2a32;
+  color: #5a5a64;
+}
+.theme-dostoevsky #workspace .fmt-btn:hover {
+  border-color: #4a4a54;
+  color: #8a8a94;
+}
+.theme-dostoevsky #workspace .abtn {
+  border-color: #2a2a32;
+  color: #5a5a64;
+}
+.theme-dostoevsky #workspace .abtn:hover {
+  border-color: #4a4a54;
+  color: #8a8a94;
+}
+.theme-dostoevsky #workspace .abtn.primary {
+  background: #2a2a32;
+  border-color: #2a2a32;
+  color: #c0beb8;
+}
+.theme-dostoevsky #workspace .ws-instruct {
+  background: #131318;
+  border-bottom-color: #2a2a32;
+}
+.theme-dostoevsky #workspace .instruct-flag {
+  color: #6a6a74;
+}
+.theme-dostoevsky #workspace .instruct-copy {
+  color: #5a5a64;
+}
+.theme-dostoevsky #workspace .instruct-copy strong {
+  color: #8a8a94;
+}
+.theme-dostoevsky #workspace .article-wrapper {
+  border-bottom-color: #2a2a32;
+}
+
 /* ── MOBILE RESPONSIVE ── */
 
 /* Tablets and below */
@@ -737,6 +929,17 @@ body {
     padding: 0.5rem 1rem;
   }
   .pill-group { gap: 0.4rem; }
+
+  /* Theme selector */
+  .theme-selector {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.3rem;
+  }
+  .theme-btn {
+    min-height: 40px;
+    padding: 0.4rem 0.8rem;
+  }
 
   /* Begin buttons — full width on mobile */
   .begin-btn {
