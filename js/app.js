@@ -1,11 +1,10 @@
-import { fetchHeadlines } from './api.js';
+import { fetchAllHeadlines } from './api.js';
 import {
   initTopicPills,
   showLoading, setLoadingStatus, hideLoading,
   showSetup, showWorkspace,
   renderHeadlineCards, clearHeadlineCards,
 } from './ui.js';
-import { ALL_SOURCES } from './config.js';
 import {
   buildArticleLayers, attachInteraction, undoLast, resetState, getState,
 } from './erasure.js';
@@ -94,27 +93,15 @@ document.getElementById('begin-btn').addEventListener('click', async () => {
   selectedIndices.clear();
 
   try {
-    for (let i = 0; i < ALL_SOURCES.length; i++) {
-      const src = ALL_SOURCES[i];
-      const topic = topics[i % topics.length];
-      setLoadingStatus(`Searching ${src.short} \u2014 ${topic}\u2026`);
-      const headlines = await fetchHeadlines(src.s, topic, dateShort);
-      headlines.forEach(hl => {
-        headlineData.push({ ...hl, sourceObj: src, topic });
+    setLoadingStatus('Searching across the spectrum\u2026');
+    const headlines = await fetchAllHeadlines(topics, dateShort);
+    headlines.forEach(hl => {
+      headlineData.push({
+        ...hl,
+        sourceObj: { s: hl.sourceName, lean: hl.lean, short: hl.short },
+        topic: topics[0],
       });
-    }
-
-    // Deduplicate by title
-    const seen = new Set();
-    headlineData = headlineData.filter(hl => {
-      const key = hl.title?.toLowerCase();
-      if (seen.has(key)) return false;
-      seen.add(key);
-      return true;
     });
-
-    // Cap at 12
-    headlineData = headlineData.slice(0, 12);
 
     renderHeadlineCards(headlineData, onCardClick);
     document.getElementById('headlines-section').style.display = '';

@@ -31,8 +31,6 @@ const TOPIC_QUERIES = {
 };
 
 // Map display source names to NewsAPI source IDs or domain fallbacks.
-// Some sources (NYT, NY Post) aren't in NewsAPI's source list but can be
-// reached via the `domains` parameter instead.
 const SOURCE_MAP = {
   'New York Times':      { domains: 'nytimes.com' },
   'The Guardian':        { sources: 'the-guardian-us' },
@@ -48,6 +46,56 @@ const SOURCE_MAP = {
   'National Review':     { sources: 'national-review' },
 };
 
+// Source name → lean/short for headline cards.
+// Lowercase keys for fuzzy matching.
+const SOURCE_LEAN = {
+  'new york times':      { lean: 'left',   short: 'NYT' },
+  'the new york times':  { lean: 'left',   short: 'NYT' },
+  'nytimes.com':         { lean: 'left',   short: 'NYT' },
+  'the guardian':        { lean: 'left',   short: 'Guardian' },
+  'washington post':     { lean: 'left',   short: 'WaPo' },
+  'the washington post': { lean: 'left',   short: 'WaPo' },
+  'npr':                 { lean: 'left',   short: 'NPR' },
+  'associated press':    { lean: 'center', short: 'AP' },
+  'ap':                  { lean: 'center', short: 'AP' },
+  'ap news':             { lean: 'center', short: 'AP' },
+  'reuters':             { lean: 'center', short: 'Reuters' },
+  'bloomberg':           { lean: 'center', short: 'Bloomberg' },
+  'politico':            { lean: 'center', short: 'Politico' },
+  'wall street journal': { lean: 'right',  short: 'WSJ' },
+  'the wall street journal': { lean: 'right', short: 'WSJ' },
+  'fox news':            { lean: 'right',  short: 'Fox' },
+  'new york post':       { lean: 'right',  short: 'NYPost' },
+  'national review':     { lean: 'right',  short: 'NatRev' },
+  'bbc news':            { lean: 'center', short: 'BBC' },
+  'bbc':                 { lean: 'center', short: 'BBC' },
+  'cnn':                 { lean: 'left',   short: 'CNN' },
+  'cbs news':            { lean: 'left',   short: 'CBS' },
+  'abc news':            { lean: 'left',   short: 'ABC' },
+  'msnbc':               { lean: 'left',   short: 'MSNBC' },
+  'the hill':            { lean: 'center', short: 'TheHill' },
+  'usa today':           { lean: 'center', short: 'USAToday' },
+  'axios':               { lean: 'center', short: 'Axios' },
+  'the daily beast':     { lean: 'left',   short: 'DailyBeast' },
+  'breitbart news':      { lean: 'right',  short: 'Breitbart' },
+  'daily mail':          { lean: 'right',  short: 'DailyMail' },
+  'newsweek':            { lean: 'center', short: 'Newsweek' },
+  'al jazeera english':  { lean: 'center', short: 'AlJazeera' },
+};
+
+function lookupLean(sourceName) {
+  if (!sourceName) return { lean: 'center', short: 'News' };
+  const key = sourceName.toLowerCase().trim();
+  if (SOURCE_LEAN[key]) return SOURCE_LEAN[key];
+  // Try partial match
+  for (const [k, v] of Object.entries(SOURCE_LEAN)) {
+    if (key.includes(k) || k.includes(key)) return v;
+  }
+  // Unknown source — derive short name, default to center
+  const short = sourceName.split(/\s+/).map(w => w[0]).join('').substring(0, 6);
+  return { lean: 'center', short: short || 'News' };
+}
+
 const CORS_HEADERS = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Methods': 'POST, OPTIONS',
@@ -60,22 +108,173 @@ function cleanContent(text) {
   return text.replace(/\[\+\d+ chars\]$/, '').trim();
 }
 
-/**
- * Build the article response object that the frontend expects.
- * Combines text from up to 5 NewsAPI articles into a single
- * { headline, byline, paragraphs } structure.
- */
+// ── Per-API fetchers (each returns normalized headline array) ──
+
+async function fetchNewsAPI(query, apiKey) {
+  const from = new Date(Date.now() - 7 * 86_400_000).toISOString().split('T')[0];
+  const params = new URLSearchParams({
+    q: query,
+    sortBy: 'publishedAt',
+    pageSize: '15',
+    language: 'en',
+    from,
+    apiKey,
+  });
+  console.log(`[NewsAPI] Fetching: q="${query.substring(0, 40)}…"`);
+  const res = await fetch(`https://newsapi.org/v2/everything?${params}`);
+  const data = await res.json();
+  if (data.status !== 'ok' || !data.articles) {
+    console.log(`[NewsAPI] status=${data.status}, code=${data.code || 'none'}`);
+    return [];
+  }
+  console.log(`[NewsAPI] Got ${data.articles.length} articles`);
+  return data.articles.map(a => ({
+    title: a.title,
+    description: (a.description || '').trim(),
+    content: cleanContent(a.content),
+    author: a.author || 'Staff Reporter',
+    sourceName: a.source?.name || 'News',
+    publishedAt: a.publishedAt,
+    url: a.url,
+  }));
+}
+
+async function fetchGuardian(query, apiKey) {
+  if (!apiKey) return [];
+  const params = new URLSearchParams({
+    q: query,
+    'api-key': apiKey,
+    'show-fields': 'headline,trailText,byline',
+    'page-size': '15',
+    'order-by': 'newest',
+  });
+  console.log(`[Guardian] Fetching: q="${query.substring(0, 40)}…"`);
+  const res = await fetch(`https://content.guardianapis.com/search?${params}`);
+  const data = await res.json();
+  if (!data.response || !data.response.results) {
+    console.log(`[Guardian] No results in response`);
+    return [];
+  }
+  console.log(`[Guardian] Got ${data.response.results.length} results`);
+  return data.response.results.map(r => ({
+    title: r.fields?.headline || r.webTitle || 'Untitled',
+    description: r.fields?.trailText || '',
+    content: '',
+    author: r.fields?.byline || 'Guardian Staff',
+    sourceName: 'The Guardian',
+    publishedAt: r.webPublicationDate,
+    url: r.webUrl,
+  }));
+}
+
+async function fetchGNews(query, apiKey) {
+  if (!apiKey) return [];
+  const params = new URLSearchParams({
+    q: query,
+    apikey: apiKey,
+    lang: 'en',
+    max: '10',
+    sortby: 'publishedAt',
+  });
+  console.log(`[GNews] Fetching: q="${query.substring(0, 40)}…"`);
+  const res = await fetch(`https://gnews.io/api/v4/search?${params}`);
+  const data = await res.json();
+  if (!data.articles) {
+    console.log(`[GNews] No articles in response`);
+    return [];
+  }
+  console.log(`[GNews] Got ${data.articles.length} articles`);
+  return data.articles.map(a => ({
+    title: a.title,
+    description: a.description || '',
+    content: a.content || '',
+    author: '',
+    sourceName: a.source?.name || 'News',
+    publishedAt: a.publishedAt,
+    url: a.url,
+  }));
+}
+
+/** Fisher-Yates shuffle (in-place). */
+function shuffle(arr) {
+  for (let i = arr.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [arr[i], arr[j]] = [arr[j], arr[i]];
+  }
+  return arr;
+}
+
+// ── Multi-API headlines handler ──
+
+async function handleMultiApiHeadlines(body) {
+  const { topics, dateStr } = body;
+  const newsapiKey = process.env.NEWSAPI_KEY;
+  const guardianKey = process.env.GUARDIAN_KEY;
+  const gnewsKey = process.env.GNEWS_KEY;
+
+  console.log(`[multi-api] topics=${JSON.stringify(topics)}, APIs: NewsAPI=${newsapiKey ? 'yes' : 'no'}, Guardian=${guardianKey ? 'yes' : 'no'}, GNews=${gnewsKey ? 'yes' : 'no'}`);
+
+  // Build all fetch promises across all topics × all APIs
+  const fetches = [];
+  for (const topic of topics) {
+    const query = TOPIC_QUERIES[topic] || topic;
+    fetches.push(
+      fetchNewsAPI(query, newsapiKey).catch(err => { console.error('[NewsAPI error]', err.message); return []; }),
+      fetchGuardian(query, guardianKey).catch(err => { console.error('[Guardian error]', err.message); return []; }),
+      fetchGNews(query, gnewsKey).catch(err => { console.error('[GNews error]', err.message); return []; }),
+    );
+  }
+
+  const results = await Promise.allSettled(fetches);
+  let pool = [];
+  for (const r of results) {
+    if (r.status === 'fulfilled' && Array.isArray(r.value)) {
+      pool.push(...r.value);
+    }
+  }
+
+  console.log(`[multi-api] Raw pool: ${pool.length} headlines`);
+
+  // Deduplicate by lowercased title
+  const seen = new Set();
+  pool = pool.filter(hl => {
+    if (!hl.title) return false;
+    const key = hl.title.toLowerCase().trim();
+    if (seen.has(key)) return false;
+    seen.add(key);
+    return true;
+  });
+
+  // Attach lean/short metadata
+  pool = pool.map(hl => {
+    const { lean, short } = lookupLean(hl.sourceName);
+    return { ...hl, lean, short };
+  });
+
+  // Shuffle and cap
+  shuffle(pool);
+  const headlines = pool.slice(0, 15);
+
+  console.log(`[multi-api] Returning ${headlines.length} headlines`);
+
+  return {
+    statusCode: 200,
+    headers: { ...CORS_HEADERS, 'Content-Type': 'application/json' },
+    body: JSON.stringify({ headlines }),
+  };
+}
+
+// ── Legacy single-source article builder ──
+
 function buildArticle(articles, source, dateStr) {
   const lead = articles[0];
   const headline = lead.title || 'Untitled';
   const author = lead.author || 'Staff Reporter';
   const byline = `By ${author} | ${source} | ${dateStr}`;
 
-  // Collect a text chunk from each article (description + truncated content).
   const chunks = articles.map(a => {
     const desc = (a.description || '').trim();
     const body = cleanContent(a.content);
-    // Avoid repeating the description if it's already the start of content.
     if (body && desc && body.startsWith(desc.substring(0, 50))) return body;
     return [desc, body].filter(Boolean).join(' ');
   }).filter(t => t.length > 0);
@@ -84,7 +283,6 @@ function buildArticle(articles, source, dateStr) {
   if (chunks.length >= 5) {
     paragraphs = chunks.slice(0, 5);
   } else if (chunks.length > 0) {
-    // Fewer than 5 articles — split all text into 5 roughly equal paragraphs.
     const allText = chunks.join(' ');
     const sentences = allText.split(/(?<=[.!?])\s+/);
     const per = Math.ceil(sentences.length / 5);
@@ -97,7 +295,6 @@ function buildArticle(articles, source, dateStr) {
     paragraphs = ['No article text available.'];
   }
 
-  // Pad to at least 2 paragraphs so the erasure layer has enough content.
   while (paragraphs.length < 2) {
     paragraphs.push(paragraphs[paragraphs.length - 1]);
   }
@@ -105,14 +302,12 @@ function buildArticle(articles, source, dateStr) {
   return { headline, byline, paragraphs };
 }
 
-/** Build the NewsAPI URL, masking the key for logging. */
 function logUrl(params) {
   const clone = new URLSearchParams(params);
   clone.set('apiKey', '***MASKED***');
   return `https://newsapi.org/v2/everything?${clone}`;
 }
 
-/** Log the relevant fields from a NewsAPI response. */
 function logNewsApiResponse(label, data) {
   console.log(`[NewsAPI ${label}] status=${data.status}, totalResults=${data.totalResults ?? 'n/a'}, code=${data.code ?? 'none'}, message=${data.message ?? 'none'}`);
 }
@@ -131,16 +326,6 @@ exports.handler = async (event) => {
     };
   }
 
-  const apiKey = process.env.NEWSAPI_KEY;
-  console.log(`[fetch-article] NEWSAPI_KEY is ${apiKey ? 'present' : 'MISSING'}`);
-  if (!apiKey) {
-    return {
-      statusCode: 500,
-      headers: CORS_HEADERS,
-      body: JSON.stringify({ error: 'NEWSAPI_KEY not configured. Add it in Netlify dashboard → Site configuration → Environment variables.' }),
-    };
-  }
-
   let body;
   try {
     body = JSON.parse(event.body);
@@ -152,8 +337,35 @@ exports.handler = async (event) => {
     };
   }
 
-  const { source, topic, dateStr, mode } = body;
+  const { mode, topics } = body;
+
+  // ── New multi-API headlines path ──
+  if (mode === 'headlines' && Array.isArray(topics) && topics.length > 0) {
+    try {
+      return await handleMultiApiHeadlines(body);
+    } catch (err) {
+      console.error('[multi-api] Unexpected error:', err);
+      return {
+        statusCode: 500,
+        headers: CORS_HEADERS,
+        body: JSON.stringify({ error: err.message }),
+      };
+    }
+  }
+
+  // ── Legacy single-source path (article building for erasure) ──
+  const { source, topic, dateStr } = body;
   console.log(`[fetch-article] source="${source}", topic="${topic}", dateStr="${dateStr}"`);
+
+  const apiKey = process.env.NEWSAPI_KEY;
+  if (!apiKey) {
+    return {
+      statusCode: 500,
+      headers: CORS_HEADERS,
+      body: JSON.stringify({ error: 'NEWSAPI_KEY not configured.' }),
+    };
+  }
+
   if (!source || !topic || !dateStr) {
     return {
       statusCode: 400,
@@ -164,8 +376,6 @@ exports.handler = async (event) => {
 
   const query = TOPIC_QUERIES[topic] || topic;
   const mapping = SOURCE_MAP[source] || {};
-
-  // 7-day lookback window
   const from = new Date(Date.now() - 7 * 86_400_000).toISOString().split('T')[0];
 
   const params = new URLSearchParams({
@@ -177,7 +387,6 @@ exports.handler = async (event) => {
     apiKey,
   });
 
-  // Use `sources` or `domains` depending on which is available for the outlet.
   if (mapping.sources) params.set('sources', mapping.sources);
   else if (mapping.domains) params.set('domains', mapping.domains);
 
@@ -189,49 +398,36 @@ exports.handler = async (event) => {
     console.log(`[fetch-article] HTTP ${res.status}`);
     logNewsApiResponse('primary', data);
 
-    // If NewsAPI returned an error, surface it immediately.
     if (data.status === 'error') {
-      console.error(`[fetch-article] NewsAPI error on primary request: code=${data.code}, message=${data.message}`);
-      // Don't fall back if it's an auth/plan issue — retrying won't help.
+      console.error(`[fetch-article] NewsAPI error: code=${data.code}, message=${data.message}`);
       if (['apiKeyInvalid', 'apiKeyDisabled', 'corsNotAllowed', 'rateLimited'].includes(data.code)) {
         return {
           statusCode: 502,
           headers: CORS_HEADERS,
-          body: JSON.stringify({
-            error: `NewsAPI error: ${data.message}`,
-            newsapiCode: data.code,
-          }),
+          body: JSON.stringify({ error: `NewsAPI error: ${data.message}`, newsapiCode: data.code }),
         };
       }
     }
 
-    // Fallback: if no results for this specific source, retry without source filter.
+    // Fallback: retry without source filter
     if (data.status !== 'ok' || !data.articles || data.articles.length === 0) {
-      console.log('[fetch-article] No results from primary request, retrying without source filter...');
+      console.log('[fetch-article] No results, retrying without source filter...');
       params.delete('sources');
       params.delete('domains');
-      console.log(`[fetch-article] Fallback URL: ${logUrl(params)}`);
-
       res = await fetch(`https://newsapi.org/v2/everything?${params}`);
       data = await res.json();
-      console.log(`[fetch-article] Fallback HTTP ${res.status}`);
       logNewsApiResponse('fallback', data);
     }
 
     if (data.status === 'error') {
-      console.error(`[fetch-article] NewsAPI error after fallback: code=${data.code}, message=${data.message}`);
       return {
         statusCode: 502,
         headers: CORS_HEADERS,
-        body: JSON.stringify({
-          error: `NewsAPI error: ${data.message}`,
-          newsapiCode: data.code,
-        }),
+        body: JSON.stringify({ error: `NewsAPI error: ${data.message}`, newsapiCode: data.code }),
       };
     }
 
     if (!data.articles || data.articles.length === 0) {
-      console.log('[fetch-article] No articles found after fallback');
       return {
         statusCode: 502,
         headers: CORS_HEADERS,
@@ -239,7 +435,7 @@ exports.handler = async (event) => {
       };
     }
 
-    console.log(`[fetch-article] Success: ${data.articles.length} articles, lead headline: "${data.articles[0].title}"`);
+    console.log(`[fetch-article] Success: ${data.articles.length} articles`);
 
     if (mode === 'headlines') {
       const headlines = data.articles.map(a => ({
