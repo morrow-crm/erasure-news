@@ -11,6 +11,7 @@ import {
 import { updatePoem, initPoemTextarea, resetPoemState } from './poem.js';
 import { openShare, closeShare, shareToX, shareToMastodon, copyText, downloadCard, setShareDate, downloadBlackout, resetEdition } from './share.js';
 import { initThemeSelector, applyTheme, clearTheme, setTheme, resetThemeSelector } from './theme.js';
+import { spawnButterflies, destroyButterflies } from './butterfly.js';
 
 // ── Dates ──
 const now = new Date();
@@ -172,6 +173,7 @@ document.getElementById('erasure-btn').addEventListener('click', () => {
   applyTheme();
   showWorkspace();
   updatePoem();
+  spawnButterflies();
   window.scrollTo({ top: 0, behavior: 'smooth' });
 });
 
@@ -183,6 +185,7 @@ document.getElementById('reset-btn').addEventListener('click', () => {
   resetState();
   resetPoemState();
   resetEdition();
+  destroyButterflies();
   clearHeadlineCards();
   clearTheme();
   setTheme('default');
