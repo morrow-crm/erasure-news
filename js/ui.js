@@ -66,9 +66,9 @@ export function renderHeadlineCards(headlines, onClickCallback) {
       ? new Date(hl.publishedAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
       : '';
 
-    const leanLabel = { left: 'L', center: 'C', right: 'R' }[hl.sourceObj?.lean] || '';
+    const leanLabel = { left: 'L', center: 'C', right: 'R', unicorn: '\u2726' }[hl.sourceObj?.lean] || '';
     const leanClass = hl.sourceObj?.lean ? `lean-${hl.sourceObj.lean}` : '';
-    const leanFull = { left: 'Left', center: 'Center', right: 'Right' }[hl.sourceObj?.lean] || '';
+    const leanFull = { left: 'Left', center: 'Center', right: 'Right', unicorn: 'Good News' }[hl.sourceObj?.lean] || '';
 
     card.innerHTML = `
       <div class="hl-card-source"><span class="lean-badge lg ${leanClass}">${leanLabel}</span> ${h(hl.sourceName)} <span class="lean-label ${leanClass}-text">${leanFull}</span></div>

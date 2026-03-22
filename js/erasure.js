@@ -68,7 +68,7 @@ export function buildArticleLayers(articles, wrapper) {
     div.className = 'article-col';
     div.id = `al-${li}`;
 
-    const leanLabel = { left: 'L', center: 'C', right: 'R' }[art.lean] || '';
+    const leanLabel = { left: 'L', center: 'C', right: 'R', unicorn: '\u2726' }[art.lean] || '';
     const leanClass = art.lean ? `lean-${art.lean}` : '';
     const srcDisplay = art.s || art.short;
 

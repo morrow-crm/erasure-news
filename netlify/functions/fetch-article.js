@@ -46,6 +46,291 @@ const SOURCE_MAP = {
   'National Review':     { sources: 'national-review' },
 };
 
+// ── RSS feed assignments by topic ──
+const TOPIC_RSS = {
+  unicorns: [
+    'https://www.goodnewsnetwork.org/feed',
+    'https://feeds.feedburner.com/upworthy',
+    'https://positive.news/feed',
+    'https://www.kottke.org/feed',
+  ],
+  science: [
+    'https://www.sciencedaily.com/rss/all.xml',
+    'https://www.newscientist.com/feed/home',
+    'https://phys.org/rss-feed',
+    'https://www.theconversation.com/articles.atom',
+  ],
+  space: [
+    'https://www.sciencedaily.com/rss/space_time.xml',
+    'https://phys.org/rss-feed/space-news',
+  ],
+  culture: [
+    'https://lithub.com/feed',
+    'https://hyperallergic.com/feed',
+    'https://www.smithsonianmag.com/rss/latest',
+  ],
+  technology: [
+    'https://arstechnica.com/feed',
+    'https://www.theconversation.com/technology/articles.atom',
+  ],
+  ai: [
+    'https://arstechnica.com/feed',
+    'https://www.theconversation.com/technology/articles.atom',
+  ],
+  climate: [
+    'https://www.theconversation.com/environment/articles.atom',
+    'https://phys.org/rss-feed/earth-news',
+  ],
+  war: [
+    'https://www.aljazeera.com/xml/rss/all.xml',
+    'http://www.dw.com/rss/rss.xml',
+    'https://rfi.fr/en/rss',
+  ],
+  land: [
+    'https://www.aljazeera.com/xml/rss/all.xml',
+    'http://www.dw.com/rss/rss.xml',
+    'https://rfi.fr/en/rss',
+  ],
+  water: [
+    'https://www.aljazeera.com/xml/rss/all.xml',
+    'http://www.dw.com/rss/rss.xml',
+    'https://rfi.fr/en/rss',
+  ],
+  // Politics/social topics share a common set
+  justice:  ['https://www.theconversation.com/articles.atom', 'https://commondreams.org/rss.xml', 'https://reason.com/feed', 'https://www.dailycaller.com/feed'],
+  ice:      ['https://www.theconversation.com/articles.atom', 'https://commondreams.org/rss.xml', 'https://reason.com/feed', 'https://www.dailycaller.com/feed'],
+  guns:     ['https://www.theconversation.com/articles.atom', 'https://commondreams.org/rss.xml', 'https://reason.com/feed', 'https://www.dailycaller.com/feed'],
+  protests: ['https://www.theconversation.com/articles.atom', 'https://commondreams.org/rss.xml', 'https://reason.com/feed', 'https://www.dailycaller.com/feed'],
+  race:     ['https://www.theconversation.com/articles.atom', 'https://commondreams.org/rss.xml', 'https://reason.com/feed', 'https://www.dailycaller.com/feed'],
+  gender:   ['https://www.theconversation.com/articles.atom', 'https://commondreams.org/rss.xml', 'https://reason.com/feed', 'https://www.dailycaller.com/feed'],
+  labor:    ['https://www.theconversation.com/articles.atom', 'https://commondreams.org/rss.xml', 'https://reason.com/feed', 'https://www.dailycaller.com/feed'],
+  religion: ['https://www.theconversation.com/articles.atom', 'https://commondreams.org/rss.xml', 'https://reason.com/feed', 'https://www.dailycaller.com/feed'],
+  bodies:   ['https://www.theconversation.com/articles.atom', 'https://commondreams.org/rss.xml', 'https://reason.com/feed', 'https://www.dailycaller.com/feed'],
+  crime:    ['https://www.theconversation.com/articles.atom', 'https://commondreams.org/rss.xml', 'https://reason.com/feed', 'https://www.dailycaller.com/feed'],
+  // Economy topics
+  inflation: ['https://www.theconversation.com/economy/articles.atom', 'https://arstechnica.com/feed'],
+  housing:   ['https://www.theconversation.com/economy/articles.atom', 'https://arstechnica.com/feed'],
+  tariffs:   ['https://www.theconversation.com/economy/articles.atom', 'https://arstechnica.com/feed'],
+  money:     ['https://www.theconversation.com/economy/articles.atom', 'https://arstechnica.com/feed'],
+  work:      ['https://www.theconversation.com/economy/articles.atom', 'https://arstechnica.com/feed'],
+  // Education
+  education: ['https://www.theconversation.com/education/articles.atom'],
+  // Health
+  health:   ['https://www.theconversation.com/health/articles.atom', 'https://www.sciencedaily.com/rss/health_medicine.xml'],
+  vaccines: ['https://www.theconversation.com/health/articles.atom', 'https://www.sciencedaily.com/rss/health_medicine.xml'],
+  // Power & Elections
+  power: ['https://commondreams.org/rss.xml', 'https://reason.com/feed', 'https://www.dailycaller.com/feed'],
+};
+
+// RSS source → lean + short label
+const RSS_SOURCE_LEAN = {
+  'goodnewsnetwork.org':  { lean: 'unicorn', short: 'GoodNews' },
+  'feedburner.com':       { lean: 'unicorn', short: 'Upworthy' },
+  'upworthy':             { lean: 'unicorn', short: 'Upworthy' },
+  'positive.news':        { lean: 'unicorn', short: 'PosNews' },
+  'kottke.org':           { lean: 'unicorn', short: 'Kottke' },
+  'sciencedaily.com':     { lean: 'center',  short: 'SciDaily' },
+  'newscientist.com':     { lean: 'center',  short: 'NewSci' },
+  'phys.org':             { lean: 'center',  short: 'PhysOrg' },
+  'theconversation.com':  { lean: 'center',  short: 'TheConvo' },
+  'lithub.com':           { lean: 'center',  short: 'LitHub' },
+  'hyperallergic.com':    { lean: 'left',    short: 'HyperAll' },
+  'smithsonianmag.com':   { lean: 'center',  short: 'Smithson' },
+  'arstechnica.com':      { lean: 'center',  short: 'ArsTech' },
+  'aljazeera.com':        { lean: 'left',    short: 'AlJazeera' },
+  'dw.com':               { lean: 'center',  short: 'DW' },
+  'rfi.fr':               { lean: 'center',  short: 'RFI' },
+  'commondreams.org':     { lean: 'left',    short: 'CommDream' },
+  'reason.com':           { lean: 'right',   short: 'Reason' },
+  'dailycaller.com':      { lean: 'right',   short: 'DailyCal' },
+  'nasa.gov':             { lean: 'center',  short: 'NASA' },
+};
+
+/** Derive source name from a feed URL for lean lookup. */
+function rssSourceFromUrl(feedUrl) {
+  try {
+    const host = new URL(feedUrl).hostname.replace(/^www\./, '');
+    for (const [domain, info] of Object.entries(RSS_SOURCE_LEAN)) {
+      if (host.includes(domain)) return { sourceName: info.short, ...info };
+    }
+    return { sourceName: host, lean: 'center', short: host.split('.')[0] };
+  } catch {
+    return { sourceName: 'RSS', lean: 'center', short: 'RSS' };
+  }
+}
+
+/** Minimal XML text extraction — gets text content from an XML tag. */
+function xmlText(xml, tag) {
+  // Handle namespaced and non-namespaced tags
+  const patterns = [
+    new RegExp(`<${tag}[^>]*><!\\[CDATA\\[([\\s\\S]*?)\\]\\]></${tag}>`, 'i'),
+    new RegExp(`<${tag}[^>]*>([\\s\\S]*?)</${tag}>`, 'i'),
+  ];
+  for (const re of patterns) {
+    const m = xml.match(re);
+    if (m) return m[1].replace(/<[^>]+>/g, '').trim();
+  }
+  return '';
+}
+
+/** Parse RSS/Atom XML into normalized article objects. Cap at maxItems. */
+function parseRSSItems(xml, feedUrl, maxItems = 4) {
+  const { sourceName, lean, short } = rssSourceFromUrl(feedUrl);
+  const items = [];
+
+  // Try RSS <item> tags first, then Atom <entry> tags
+  const isAtom = xml.includes('<feed') && xml.includes('<entry');
+  const tagOpen = isAtom ? '<entry' : '<item';
+  const tagClose = isAtom ? '</entry>' : '</item>';
+
+  let pos = 0;
+  while (items.length < maxItems) {
+    const start = xml.indexOf(tagOpen, pos);
+    if (start === -1) break;
+    const end = xml.indexOf(tagClose, start);
+    if (end === -1) break;
+    const chunk = xml.substring(start, end + tagClose.length);
+    pos = end + tagClose.length;
+
+    const title = xmlText(chunk, 'title');
+    if (!title) continue;
+
+    let description = '';
+    if (isAtom) {
+      description = xmlText(chunk, 'summary') || xmlText(chunk, 'content');
+    } else {
+      description = xmlText(chunk, 'description') || xmlText(chunk, 'content:encoded');
+    }
+    // Strip HTML and truncate description to something reasonable
+    description = description.replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim();
+    if (description.length > 800) description = description.substring(0, 800);
+
+    let link = '';
+    if (isAtom) {
+      const linkMatch = chunk.match(/<link[^>]*href=["']([^"']+)["'][^>]*\/?>/i);
+      link = linkMatch ? linkMatch[1] : '';
+    } else {
+      link = xmlText(chunk, 'link');
+    }
+
+    let pubDate = '';
+    if (isAtom) {
+      pubDate = xmlText(chunk, 'published') || xmlText(chunk, 'updated');
+    } else {
+      pubDate = xmlText(chunk, 'pubDate');
+    }
+
+    const author = xmlText(chunk, 'author') || xmlText(chunk, 'dc:creator') || '';
+
+    items.push({
+      title,
+      description,
+      content: description,  // RSS descriptions are often the full content
+      author: author || `${sourceName} Staff`,
+      sourceName,
+      lean,
+      short,
+      publishedAt: pubDate || new Date().toISOString(),
+      url: link,
+      viaRSS: true,
+    });
+  }
+
+  return items;
+}
+
+/** Fetch a single RSS feed with a 3-second timeout. */
+async function fetchRSSFeed(feedUrl) {
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), 3000);
+  try {
+    console.log(`[RSS] Fetching: ${feedUrl.substring(0, 60)}…`);
+    const res = await fetch(feedUrl, {
+      signal: controller.signal,
+      headers: { 'User-Agent': 'ErasureNews/1.0' },
+    });
+    if (!res.ok) {
+      console.log(`[RSS] HTTP ${res.status} from ${feedUrl}`);
+      return [];
+    }
+    const xml = await res.text();
+    const items = parseRSSItems(xml, feedUrl, 4);
+    console.log(`[RSS] Got ${items.length} items from ${feedUrl.substring(0, 50)}`);
+    return items;
+  } catch (err) {
+    if (err.name === 'AbortError') {
+      console.log(`[RSS] Timeout (3s) for ${feedUrl.substring(0, 50)}`);
+    } else {
+      console.log(`[RSS] Error fetching ${feedUrl.substring(0, 50)}: ${err.message}`);
+    }
+    return [];
+  } finally {
+    clearTimeout(timeout);
+  }
+}
+
+/** Fetch all RSS feeds for given topics in parallel. */
+async function fetchRSSForTopics(topics) {
+  const feedSet = new Set();
+  for (const topic of topics) {
+    const feeds = TOPIC_RSS[topic];
+    if (feeds) feeds.forEach(f => feedSet.add(f));
+  }
+  if (feedSet.size === 0) return [];
+
+  console.log(`[RSS] Fetching ${feedSet.size} feeds for topics: ${topics.join(', ')}`);
+  const results = await Promise.allSettled(
+    [...feedSet].map(url => fetchRSSFeed(url))
+  );
+
+  const articles = [];
+  for (const r of results) {
+    if (r.status === 'fulfilled' && Array.isArray(r.value)) {
+      articles.push(...r.value);
+    }
+  }
+  console.log(`[RSS] Total: ${articles.length} articles from ${feedSet.size} feeds`);
+  return articles;
+}
+
+/** Fetch NASA APOD for the Space topic. */
+async function fetchNASAApod(apiKey) {
+  if (!apiKey) return [];
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), 3000);
+  try {
+    console.log('[NASA] Fetching APOD');
+    const params = new URLSearchParams({ api_key: apiKey, count: '3' });
+    const res = await fetch(`https://api.nasa.gov/planetary/apod?${params}`, {
+      signal: controller.signal,
+    });
+    if (!res.ok) {
+      console.log(`[NASA] HTTP ${res.status}`);
+      return [];
+    }
+    const data = await res.json();
+    const items = (Array.isArray(data) ? data : [data]).map(item => ({
+      title: item.title || 'NASA Image of the Day',
+      description: (item.explanation || '').substring(0, 800),
+      content: item.explanation || '',
+      author: item.copyright || 'NASA',
+      sourceName: 'NASA',
+      lean: 'center',
+      short: 'NASA',
+      publishedAt: item.date ? new Date(item.date).toISOString() : new Date().toISOString(),
+      url: item.hdurl || item.url || 'https://apod.nasa.gov',
+      viaRSS: true,
+    }));
+    console.log(`[NASA] Got ${items.length} APOD items`);
+    return items;
+  } catch (err) {
+    console.log(`[NASA] Error: ${err.message}`);
+    return [];
+  } finally {
+    clearTimeout(timeout);
+  }
+}
+
 // Source name → lean/short for headline cards.
 // Lowercase keys for fuzzy matching.
 const SOURCE_LEAN = {
@@ -80,7 +365,7 @@ const SOURCE_LEAN = {
   'breitbart news':      { lean: 'right',  short: 'Breitbart' },
   'daily mail':          { lean: 'right',  short: 'DailyMail' },
   'newsweek':            { lean: 'center', short: 'Newsweek' },
-  'al jazeera english':  { lean: 'center', short: 'AlJazeera' },
+  'al jazeera english':  { lean: 'left', short: 'AlJazeera' },
 };
 
 function lookupLean(sourceName) {
@@ -278,10 +563,13 @@ async function handleMultiApiHeadlines(body) {
   const newsapiKey = process.env.NEWSAPI_KEY;
   const guardianKey = process.env.GUARDIAN_KEY;
   const gnewsKey = process.env.GNEWS_KEY;
+  const nasaKey = process.env.NASA_API_KEY;
+  const isUnicorn = topics.includes('unicorns');
+  const isSpace = topics.includes('space');
 
-  console.log(`[multi-api] topics=${JSON.stringify(topics)}, APIs: NewsAPI=${newsapiKey ? 'yes' : 'no'}, Guardian=${guardianKey ? 'yes' : 'no'}, GNews=${gnewsKey ? 'yes' : 'no'}`);
+  console.log(`[multi-api] topics=${JSON.stringify(topics)}, APIs: NewsAPI=${newsapiKey ? 'yes' : 'no'}, Guardian=${guardianKey ? 'yes' : 'no'}, GNews=${gnewsKey ? 'yes' : 'no'}, NASA=${nasaKey ? 'yes' : 'no'}`);
 
-  // Phase 1: Broad fetch across all topics × all APIs
+  // Phase 1: Broad fetch across all topics × all APIs + RSS + NASA in parallel
   const fetches = [];
   for (const topic of topics) {
     const query = TOPIC_QUERIES[topic] || topic;
@@ -292,17 +580,34 @@ async function handleMultiApiHeadlines(body) {
     );
   }
 
-  const results = await Promise.allSettled(fetches);
+  // RSS feeds and NASA run in parallel with the API fetches
+  const rssPromise = fetchRSSForTopics(topics).catch(err => { console.error('[RSS error]', err.message); return []; });
+  const nasaPromise = isSpace ? fetchNASAApod(nasaKey).catch(err => { console.error('[NASA error]', err.message); return []; }) : Promise.resolve([]);
+
+  const [apiResults, rssArticles, nasaArticles] = await Promise.all([
+    Promise.allSettled(fetches),
+    rssPromise,
+    nasaPromise,
+  ]);
+
   let pool = [];
-  for (const r of results) {
+  for (const r of apiResults) {
     if (r.status === 'fulfilled' && Array.isArray(r.value)) {
       pool.push(...r.value);
     }
   }
 
-  console.log(`[multi-api] Raw pool: ${pool.length} headlines`);
+  console.log(`[multi-api] Raw API pool: ${pool.length}, RSS: ${rssArticles.length}, NASA: ${nasaArticles.length}`);
 
-  // Deduplicate by lowercased title
+  // For unicorns, RSS results go first so they get priority after dedup
+  const rssPool = [...rssArticles, ...nasaArticles];
+  if (isUnicorn) {
+    pool = [...rssPool, ...pool];
+  } else {
+    pool = [...pool, ...rssPool];
+  }
+
+  // Deduplicate by lowercased title (first occurrence wins — order matters for unicorn priority)
   const seen = new Set();
   pool = pool.filter(hl => {
     if (!hl.title) return false;
@@ -312,10 +617,13 @@ async function handleMultiApiHeadlines(body) {
     return true;
   });
 
-  // Attach lean/short/textQuality metadata
+  // Attach lean/short/textQuality metadata (RSS items already have lean/short)
   pool = pool.map(hl => {
-    const { lean, short } = lookupLean(hl.sourceName);
-    return { ...hl, lean, short, textQuality: textQuality(hl) };
+    if (!hl.lean || !hl.short) {
+      const { lean, short } = lookupLean(hl.sourceName);
+      return { ...hl, lean, short, textQuality: textQuality(hl) };
+    }
+    return { ...hl, textQuality: hl.textQuality || textQuality(hl) };
   });
 
   // Phase 2: Check lean balance — if any lean has < 3 articles, do targeted fetches
@@ -356,7 +664,7 @@ async function handleMultiApiHeadlines(body) {
   pool.sort((a, b) => (qualityOrder[a.textQuality] || 2) - (qualityOrder[b.textQuality] || 2));
 
   // Build a balanced selection: pick up to 5 per lean, then fill remaining
-  const byLean = { left: [], center: [], right: [] };
+  const byLean = { left: [], center: [], right: [], unicorn: [] };
   const overflow = [];
   for (const hl of pool) {
     if (byLean[hl.lean] && byLean[hl.lean].length < 5) {
@@ -366,7 +674,8 @@ async function handleMultiApiHeadlines(body) {
     }
   }
 
-  let headlines = [...byLean.left, ...byLean.center, ...byLean.right];
+  // Unicorn articles always included when topic is unicorns
+  let headlines = [...byLean.unicorn, ...byLean.left, ...byLean.center, ...byLean.right];
   // Fill to 15 from overflow
   for (const hl of overflow) {
     if (headlines.length >= 15) break;
