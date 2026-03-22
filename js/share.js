@@ -3,8 +3,17 @@ import { getPoemString } from './poem.js';
 import { getTheme } from './theme.js';
 import { getFascismWordsInPoem, getRedStringPositions } from './dostoevsky.js';
 
+// Launch date: March 2026
+const LAUNCH_YEAR = 2026;
+const LAUNCH_MONTH = 3;
+
+function calcVolume() {
+  const now = new Date();
+  return (now.getFullYear() - LAUNCH_YEAR) * 12 + (now.getMonth() + 1 - LAUNCH_MONTH) + 1;
+}
+
 let dateShort = '';
-let editionVolume = new Date().getMonth() + 1;
+let editionVolume = calcVolume();
 let editionNumber = null;
 let sessionCounted = false;
 

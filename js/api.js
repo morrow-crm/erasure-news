@@ -1,4 +1,4 @@
-import { API_ENDPOINT } from './config.js';
+import { API_ENDPOINT, TOPIC_KEYWORDS } from './config.js';
 
 /**
  * Fetch an article from the serverless proxy.
@@ -37,6 +37,25 @@ export async function fetchHeadlines(source, topic, dateStr) {
   return data.headlines;
 }
 
+/**
+ * Client-side relevance filter — mirrors the server-side check.
+ * Returns true if title or description contains at least one required keyword.
+ */
+function passesRelevanceFilter(article, requiredKeywords) {
+  if (!requiredKeywords || requiredKeywords.length === 0) return true;
+  const text = ((article.title || '') + ' ' + (article.description || '')).toLowerCase();
+  return requiredKeywords.some(kw => text.includes(kw.toLowerCase()));
+}
+
+/** Collect required keywords for the given topics. */
+function getRequiredKeywords(topics) {
+  const all = [];
+  for (const t of topics) {
+    if (TOPIC_KEYWORDS[t]?.required) all.push(...TOPIC_KEYWORDS[t].required);
+  }
+  return all;
+}
+
 /** Fetch headlines from all APIs (NewsAPI + Guardian + GNews) in one request. */
 export async function fetchAllHeadlines(topics, dateStr) {
   const res = await fetch(API_ENDPOINT, {
@@ -51,5 +70,13 @@ export async function fetchAllHeadlines(topics, dateStr) {
   }
 
   const data = await res.json();
-  return data.headlines;
+  let headlines = data.headlines || [];
+
+  // Client-side relevance filter — double-check server results
+  const requiredKeywords = getRequiredKeywords(topics);
+  if (requiredKeywords.length > 0) {
+    headlines = headlines.filter(hl => passesRelevanceFilter(hl, requiredKeywords));
+  }
+
+  return headlines;
 }
