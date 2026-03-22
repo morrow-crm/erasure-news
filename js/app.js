@@ -10,6 +10,7 @@ import {
 } from './erasure.js';
 import { updatePoem, initPoemTextarea, resetPoemState } from './poem.js';
 import { openShare, closeShare, shareToX, shareToMastodon, copyText, downloadCard, setShareDate, downloadBlackout, resetEdition } from './share.js';
+import { initThemeSelector, applyTheme, clearTheme, setTheme, resetThemeSelector } from './theme.js';
 
 // ── Dates ──
 const now = new Date();
@@ -27,6 +28,7 @@ const getTopics = initTopicPills(document.getElementById('topic-pills'));
 const wrapper = document.getElementById('article-wrapper');
 attachInteraction(wrapper);
 initPoemTextarea();
+initThemeSelector();
 
 // ── Headline browsing state ──
 let headlineData = [];
@@ -167,6 +169,7 @@ document.getElementById('erasure-btn').addEventListener('click', () => {
   });
 
   buildArticleLayers(results, wrapper);
+  applyTheme();
   showWorkspace();
   updatePoem();
 });
@@ -180,6 +183,9 @@ document.getElementById('reset-btn').addEventListener('click', () => {
   resetPoemState();
   resetEdition();
   clearHeadlineCards();
+  clearTheme();
+  setTheme('default');
+  resetThemeSelector();
   document.getElementById('headlines-section').style.display = 'none';
   headlineData = [];
   selectedIndices.clear();

@@ -1,5 +1,6 @@
 import { getState } from './erasure.js';
 import { getPoemString } from './poem.js';
+import { getTheme } from './theme.js';
 
 let dateShort = '';
 let editionVolume = new Date().getMonth() + 1;
@@ -121,8 +122,110 @@ export function copyText() {
   });
 }
 
+// Theme-specific palettes for share card rendering
+const CARD_THEMES = {
+  default: {
+    bg: '#fafaf7',
+    ruledLine: 'rgba(0,0,0,0.04)',
+    border: '#0d0d0d',
+    nameplateBg: '#0d0d0d',
+    nameplateText: '#fafaf7',
+    editionText: '#6b6560',
+    ruleColor: '#0d0d0d',
+    metaText: '#6b6560',
+    poemText: '#0d0d0d',
+    footerRule: '#c8c4ba',
+    footerText: '#aaa49a',
+    grainIntensity: 5,
+    themeLabel: '',
+  },
+  tolstoy: {
+    bg: '#faf6ed',
+    ruledLine: 'rgba(90,122,84,0.06)',
+    border: '#5a7a54',
+    nameplateBg: '#2c4a28',
+    nameplateText: '#faf6ed',
+    editionText: '#c49a3c',
+    ruleColor: '#5a7a54',
+    metaText: '#6b7a5e',
+    poemText: '#2c4a28',
+    footerRule: '#a8c4a0',
+    footerText: '#6b7a5e',
+    grainIntensity: 4,
+    themeLabel: 'Tolstoy Edition',
+    cornerDeco: true,
+  },
+  dostoevsky: {
+    bg: '#151518',
+    ruledLine: 'rgba(255,255,255,0.015)',
+    border: '#2a2a32',
+    nameplateBg: '#3a1a1a',
+    nameplateText: '#c0beb8',
+    editionText: '#4a6a8a',
+    ruleColor: '#2a2a32',
+    metaText: '#5a5a64',
+    poemText: '#c0beb8',
+    footerRule: '#2a2a32',
+    footerText: '#4a4a54',
+    grainIntensity: 3,
+    themeLabel: 'Dostoevsky Edition',
+    crosshatch: true,
+  },
+};
+
+/** Draw Tolstoy botanical corner decorations. */
+function drawBotanicalCorners(ctx, W, H, color) {
+  ctx.strokeStyle = color;
+  ctx.lineWidth = 0.8;
+  ctx.globalAlpha = 0.3;
+  const r = 28;
+  // Top-left — small branch
+  ctx.beginPath();
+  ctx.moveTo(20, 20 + r); ctx.quadraticCurveTo(20, 20, 20 + r, 20);
+  ctx.moveTo(22, 22 + r * 0.6); ctx.quadraticCurveTo(28, 28, 22 + r * 0.6, 22);
+  // Small leaf
+  ctx.moveTo(26, 26); ctx.quadraticCurveTo(34, 20, 40, 24);
+  ctx.quadraticCurveTo(34, 28, 26, 26);
+  ctx.stroke();
+  // Top-right — mirror
+  ctx.beginPath();
+  ctx.moveTo(W - 20, 20 + r); ctx.quadraticCurveTo(W - 20, 20, W - 20 - r, 20);
+  ctx.moveTo(W - 22, 22 + r * 0.6); ctx.quadraticCurveTo(W - 28, 28, W - 22 - r * 0.6, 22);
+  ctx.moveTo(W - 26, 26); ctx.quadraticCurveTo(W - 34, 20, W - 40, 24);
+  ctx.quadraticCurveTo(W - 34, 28, W - 26, 26);
+  ctx.stroke();
+  // Bottom-left
+  ctx.beginPath();
+  ctx.moveTo(20, H - 20 - r); ctx.quadraticCurveTo(20, H - 20, 20 + r, H - 20);
+  ctx.moveTo(26, H - 26); ctx.quadraticCurveTo(34, H - 20, 40, H - 24);
+  ctx.quadraticCurveTo(34, H - 28, 26, H - 26);
+  ctx.stroke();
+  // Bottom-right
+  ctx.beginPath();
+  ctx.moveTo(W - 20, H - 20 - r); ctx.quadraticCurveTo(W - 20, H - 20, W - 20 - r, H - 20);
+  ctx.moveTo(W - 26, H - 26); ctx.quadraticCurveTo(W - 34, H - 20, W - 40, H - 24);
+  ctx.quadraticCurveTo(W - 34, H - 28, W - 26, H - 26);
+  ctx.stroke();
+  ctx.globalAlpha = 1;
+}
+
+/** Draw Dostoevsky crosshatch texture. */
+function drawCrosshatch(ctx, W, H) {
+  ctx.strokeStyle = 'rgba(255,255,255,0.02)';
+  ctx.lineWidth = 0.5;
+  const step = 8;
+  for (let x = -H; x < W; x += step) {
+    ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x + H, H); ctx.stroke();
+  }
+  for (let x = 0; x < W + H; x += step) {
+    ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x - H, H); ctx.stroke();
+  }
+}
+
 function renderCard(poem) {
   const { layers } = getState();
+  const theme = getTheme();
+  const t = CARD_THEMES[theme] || CARD_THEMES.default;
   const edition = getEditionString();
   const canvas = document.getElementById('share-canvas');
   const W = 520, H = 310;
@@ -133,50 +236,57 @@ function renderCard(poem) {
   const ctx = canvas.getContext('2d');
 
   // Background
-  ctx.fillStyle = '#fafaf7';
+  ctx.fillStyle = t.bg;
   ctx.fillRect(0, 0, W, H);
 
+  // Dostoevsky crosshatch
+  if (t.crosshatch) drawCrosshatch(ctx, W, H);
+
   // Ruled lines
-  ctx.strokeStyle = 'rgba(0,0,0,0.04)';
+  ctx.strokeStyle = t.ruledLine;
   ctx.lineWidth = 1;
   for (let y = 24; y < H; y += 24) {
     ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(W, y); ctx.stroke();
   }
 
   // Borders
-  ctx.strokeStyle = '#0d0d0d';
+  ctx.strokeStyle = t.border;
   ctx.lineWidth = 2;
   ctx.strokeRect(12, 12, W - 24, H - 24);
   ctx.lineWidth = 0.5;
   ctx.strokeRect(16, 16, W - 32, H - 32);
 
+  // Tolstoy botanical corners
+  if (t.cornerDeco) drawBotanicalCorners(ctx, W, H, t.border);
+
   // Nameplate
-  ctx.fillStyle = '#0d0d0d';
+  ctx.fillStyle = t.nameplateBg;
   ctx.fillRect(12, 12, W - 24, 40);
-  ctx.fillStyle = '#fafaf7';
+  ctx.fillStyle = t.nameplateText;
   ctx.font = 'bold 18px Georgia, serif';
   ctx.textAlign = 'center';
   ctx.fillText('ERASURE NEWS', W / 2, 38);
 
-  // Edition line beneath nameplate band
-  ctx.fillStyle = '#6b6560';
+  // Edition line
+  ctx.fillStyle = t.editionText;
   ctx.font = '9px "Courier New", monospace';
   ctx.textAlign = 'center';
-  ctx.fillText(edition, W / 2, 60);
+  const editionStr = t.themeLabel ? `${edition}  \u00b7  ${t.themeLabel}` : edition;
+  ctx.fillText(editionStr, W / 2, 60);
 
   // Rule
-  ctx.fillStyle = '#0d0d0d';
+  ctx.fillStyle = t.ruleColor;
   ctx.fillRect(12, 64, W - 24, 1);
 
   // Source + date
-  ctx.fillStyle = '#6b6560';
+  ctx.fillStyle = t.metaText;
   ctx.font = '10px "Courier New", monospace';
   ctx.textAlign = 'center';
   ctx.fillText(layers.map(l => l.short).join(' \u00b7 ') + '   \u00b7   ' + dateShort, W / 2, 80);
 
   // Poem
   const lines = poem.split('\n');
-  ctx.fillStyle = '#0d0d0d';
+  ctx.fillStyle = t.poemText;
   ctx.font = 'italic 17px Georgia, "Times New Roman", serif';
   const lh = 28;
   const totalH = lines.length * lh;
@@ -184,9 +294,9 @@ function renderCard(poem) {
   lines.forEach(line => { ctx.fillText(line, W / 2, y); y += lh; });
 
   // Footer
-  ctx.fillStyle = '#c8c4ba';
+  ctx.fillStyle = t.footerRule;
   ctx.fillRect(40, H - 32, W - 80, 1);
-  ctx.fillStyle = '#aaa49a';
+  ctx.fillStyle = t.footerText;
   ctx.font = '9px "Courier New", monospace';
   ctx.fillText('Is it news or poetry? You decide!  \u00b7  erasurenews.com', W / 2, H - 18);
 
@@ -194,7 +304,7 @@ function renderCard(poem) {
   const id = ctx.getImageData(0, 0, W, H);
   const d = id.data;
   for (let i = 0; i < d.length; i += 4) {
-    const n = (Math.random() - 0.5) * 5;
+    const n = (Math.random() - 0.5) * t.grainIntensity;
     d[i]     = Math.min(255, Math.max(0, d[i] + n));
     d[i + 1] = Math.min(255, Math.max(0, d[i + 1] + n));
     d[i + 2] = Math.min(255, Math.max(0, d[i + 2] + n));
@@ -238,9 +348,11 @@ export async function downloadBlackout() {
   btn.disabled = true;
 
   try {
+    const theme = getTheme();
+    const bgColor = theme === 'dostoevsky' ? '#151518' : theme === 'tolstoy' ? '#faf6ed' : '#fafaf7';
     const html2canvas = await loadHtml2Canvas();
     const canvas = await html2canvas(wrapper, {
-      backgroundColor: '#fafaf7',
+      backgroundColor: bgColor,
       scale: 2,
       useCORS: true,
       logging: false,
