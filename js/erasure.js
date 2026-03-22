@@ -8,6 +8,9 @@ let undoStack = [];
 let dragging = false;
 let dragMode = null;
 
+/** Detect touch-capable device (used for mobile interaction model). */
+export const isTouchDevice = () => 'ontouchstart' in window || navigator.maxTouchPoints > 0;
+
 export function getState() {
   return { layers, wState, undoStack };
 }
@@ -151,9 +154,25 @@ export function undoLast() {
   updatePoem();
 }
 
+/** Un-erase a word (restore from erased state). */
+function unerase(span) {
+  const li = parseInt(span.dataset.li);
+  const wi = parseInt(span.dataset.wi);
+  const key = `${li}-${wi}`;
+  const prev = wState[key] || null;
+  if (prev !== 'erased') return;
+  undoStack.push({ key, prev });
+  wState[key] = null;
+  span.classList.remove('erased');
+  // Flash animation for visual feedback
+  span.classList.add('unerase-flash');
+  span.addEventListener('animationend', () => span.classList.remove('unerase-flash'), { once: true });
+  updatePoem();
+}
+
 /** Attach mouse and touch event delegation on the article wrapper. */
 export function attachInteraction(wrapper) {
-  // ── Mouse events ──
+  // ── Mouse events (desktop — unchanged) ──
   wrapper.addEventListener('mousedown', e => {
     const span = e.target.closest('.w');
     if (!span) return;
@@ -175,10 +194,13 @@ export function attachInteraction(wrapper) {
     dragMode = null;
   });
 
-  // ── Touch events ──
-  // Only intercept scrolling when touch starts directly on a word span.
+  // ── Touch events (mobile) ──
   let touchStartedOnWord = false;
   let lastTouchSpan = null;
+  let touchStartSpan = null;
+  let touchMoved = false;
+  let lastTapTime = 0;
+  let lastTapSpan = null;
 
   wrapper.addEventListener('touchstart', e => {
     const touch = e.touches[0];
@@ -189,31 +211,79 @@ export function attachInteraction(wrapper) {
       return; // Let normal scrolling happen
     }
     touchStartedOnWord = true;
+    touchMoved = false;
     dragging = true;
     dragMode = 'erase';
     lastTouchSpan = span;
-    act(span, dragMode);
-    e.preventDefault(); // Prevent scroll only when starting on a word
+    touchStartSpan = span;
+    e.preventDefault();
   }, { passive: false });
 
   wrapper.addEventListener('touchmove', e => {
-    if (!touchStartedOnWord || !dragging || !dragMode) return;
+    if (!touchStartedOnWord || !dragging) return;
+    if (!touchMoved) {
+      // First move — erase the starting word (drag started)
+      touchMoved = true;
+      if (touchStartSpan) act(touchStartSpan, 'erase');
+    }
     const touch = e.touches[0];
     const el = document.elementFromPoint(touch.clientX, touch.clientY);
     const span = el?.closest('.w');
     if (span && span !== lastTouchSpan) {
+      act(span, 'erase');
       lastTouchSpan = span;
-      act(span, dragMode);
     }
-    e.preventDefault(); // Prevent scroll during word-drag
+    e.preventDefault();
   }, { passive: false });
 
-  const endTouch = () => {
+  const endTouch = (e) => {
+    if (!touchStartedOnWord) return;
+    const span = lastTouchSpan;
+    const now = Date.now();
+
+    if (!touchMoved && span) {
+      // Single tap (no drag) — check for double tap
+      const key = `${span.dataset.li}-${span.dataset.wi}`;
+      const isErased = wState[key] === 'erased';
+
+      if (now - lastTapTime < 350 && lastTapSpan === span) {
+        // Double tap
+        if (isErased) {
+          unerase(span);
+        }
+        // Double tap on non-erased word does nothing
+        lastTapTime = 0;
+        lastTapSpan = null;
+      } else {
+        // First tap — erase the word
+        if (!isErased) {
+          act(span, 'erase');
+        }
+        lastTapTime = now;
+        lastTapSpan = span;
+      }
+    } else if (touchMoved && lastTouchSpan) {
+      // Drag ended — also erase the starting word if it wasn't already
+      const startKey = `${lastTouchSpan.dataset.li}-${lastTouchSpan.dataset.wi}`;
+      if (wState[startKey] !== 'erased') {
+        act(lastTouchSpan, 'erase');
+      }
+    }
+
     touchStartedOnWord = false;
     lastTouchSpan = null;
+    touchStartSpan = null;
+    touchMoved = false;
     dragging = false;
     dragMode = null;
   };
   wrapper.addEventListener('touchend', endTouch);
-  wrapper.addEventListener('touchcancel', endTouch);
+  wrapper.addEventListener('touchcancel', () => {
+    touchStartedOnWord = false;
+    lastTouchSpan = null;
+    touchStartSpan = null;
+    touchMoved = false;
+    dragging = false;
+    dragMode = null;
+  });
 }
