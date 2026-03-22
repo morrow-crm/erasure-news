@@ -645,6 +645,40 @@ body {
   color: var(--muted);
 }
 
+.share-title-row {
+  padding: 0.8rem 1.5rem 0;
+}
+.share-title-label {
+  display: block;
+  font-family: 'Courier Prime', monospace;
+  font-size: 0.55rem;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--muted);
+  margin-bottom: 0.3rem;
+}
+.share-title-input {
+  width: 100%;
+  font-family: 'Playfair Display', serif;
+  font-style: italic;
+  font-size: 1.1rem;
+  color: var(--ink);
+  background: transparent;
+  border: none;
+  border-bottom: 1px solid var(--col-rule);
+  padding: 0.3rem 0;
+  outline: none;
+  transition: border-color 0.2s;
+}
+.share-title-input::placeholder {
+  color: var(--muted);
+  opacity: 0.5;
+  font-style: italic;
+}
+.share-title-input:focus {
+  border-bottom-color: var(--ink);
+}
+
 .share-poem-box {
   padding: 1.8rem 1.5rem;
   border-bottom: 1px solid var(--col-rule);
