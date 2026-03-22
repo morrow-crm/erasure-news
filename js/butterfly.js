@@ -235,8 +235,9 @@ export function spawnButterflies() {
   container = document.getElementById('workspace');
   if (!container) return;
 
-  // Spawn 4-6 butterflies
-  const count = 4 + Math.floor(Math.random() * 3);
+  // Spawn fewer on mobile (2-3) vs desktop (4-6)
+  const isMobile = window.matchMedia('(pointer: coarse)').matches;
+  const count = isMobile ? 2 + Math.floor(Math.random() * 2) : 4 + Math.floor(Math.random() * 3);
   for (let i = 0; i < count; i++) {
     const variant = BUTTERFLY_VARIANTS[i % BUTTERFLY_VARIANTS.length];
     const bf = createButterflyEl(variant);
