@@ -1,7 +1,7 @@
 import { h } from './ui.js';
 import { updatePoem } from './poem.js';
 import { getTheme } from './theme.js';
-import { burnWord, onWordAction, isFascismWord } from './dostoevsky.js';
+import { disintegrateWord, onWordAction, isFascismWord } from './dostoevsky.js';
 
 // ── State shared across this module ──
 let layers = [];
@@ -125,9 +125,9 @@ function act(span, mode) {
     wState[key] = 'erased';
     span.classList.remove('kept');
 
-    // Dostoevsky: fire-and-ash burn animation
+    // Dostoevsky: disintegration animation
     if (getTheme() === 'dostoevsky') {
-      burnWord(span).then(() => {
+      disintegrateWord(span).then(() => {
         span.classList.add('erased');
         updatePoem();
         onWordAction();
@@ -153,6 +153,7 @@ function act(span, mode) {
 
 /** Undo the last erase/keep action. */
 export function undoLast() {
+  if (getTheme() === 'dostoevsky') return; // No undoing fate
   if (!undoStack.length) return;
   const { key, prev } = undoStack.pop();
   const [li, wi] = key.split('-').map(Number);
@@ -170,6 +171,7 @@ export function undoLast() {
 
 /** Un-erase a word (restore from erased state). */
 function unerase(span) {
+  if (getTheme() === 'dostoevsky') return; // No undoing fate
   const li = parseInt(span.dataset.li);
   const wi = parseInt(span.dataset.wi);
   const key = `${li}-${wi}`;
