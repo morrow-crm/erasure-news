@@ -869,12 +869,10 @@ body {
 
 /* ── TOLSTOY BUTTERFLIES ── */
 
-/* Butterfly wrapper — fixed position, generous hit area */
+/* Butterfly wrapper — absolute position, size set by JS */
 .butterfly {
   position: absolute;
   z-index: 100;
-  width: 44px;
-  height: 44px;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -882,9 +880,14 @@ body {
   pointer-events: auto;
   -webkit-tap-highlight-color: transparent;
 }
+/* Bouquet butterflies are non-interactive */
+.butterfly.bf-bouquet {
+  pointer-events: none;
+  cursor: default;
+}
 .bf-svg {
   overflow: visible;
-  filter: drop-shadow(0 1px 2px rgba(0,0,0,0.1));
+  filter: drop-shadow(0 1px 3px rgba(0,0,0,0.15));
 }
 
 /* Wing flap animation — speed controlled by --flap-speed */
@@ -916,7 +919,7 @@ body {
   transition: none;
 }
 
-/* Resting on word — slow, gentle wing movement */
+/* Resting on word — slow breathing wing movement */
 .bf-resting {
   animation: none !important;
   --flap-speed: 0.8s;
@@ -932,7 +935,7 @@ body {
   100% { transform: rotate(720deg) scale(1); }
 }
 
-/* Butterfly color variants — wing fill */
+/* Butterfly color variants — wing fill + body color */
 .bf-yellow .bf-wing-l, .bf-yellow .bf-wing-r { fill: #e8c94a; }
 .bf-yellow .bf-svg { color: #b89830; }
 .bf-blue .bf-wing-l, .bf-blue .bf-wing-r { fill: #7db8d4; }
@@ -944,44 +947,46 @@ body {
 .bf-pink .bf-wing-l, .bf-pink .bf-wing-r { fill: #e4a0aa; }
 .bf-pink .bf-svg { color: #b06878; }
 
-/* Wing inner detail — subtle vein pattern */
+/* Wing detail — vein pattern for visible detail at larger sizes */
 .bf-wing-l, .bf-wing-r {
   opacity: 0.85;
-  stroke: rgba(0,0,0,0.08);
-  stroke-width: 0.3;
+  stroke: rgba(0,0,0,0.1);
+  stroke-width: 0.4;
 }
 
-/* Transformed word styling */
+/* Transformed word styling — bloom effect handled by JS transitions */
 .bf-transformed {
   position: relative;
   font-style: italic;
   font-weight: 600;
+  display: inline-block;
 }
 .bf-word-dot {
   position: absolute;
   bottom: -3px;
   left: 50%;
   transform: translateX(-50%);
-  width: 3px;
-  height: 3px;
-  border-radius: 50%;
-  pointer-events: none;
-}
-
-/* Pollen / pixie dust particles */
-.bf-pollen {
-  position: fixed;
   width: 4px;
   height: 4px;
   border-radius: 50%;
   pointer-events: none;
+}
+
+/* Pollen / pixie dust particles — spiral burst */
+.bf-pollen {
+  position: fixed;
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  pointer-events: none;
   z-index: 200;
-  animation: bf-pollen-rise 0.8s ease-out forwards;
-  opacity: 0.8;
+  animation: bf-pollen-rise 1s ease-out forwards;
+  opacity: 0.85;
 }
 @keyframes bf-pollen-rise {
-  0%   { transform: translate(0, 0) scale(1); opacity: 0.8; }
-  100% { transform: translate(var(--dx, 0), var(--dy, -30px)) scale(0.3); opacity: 0; }
+  0%   { transform: translate(0, 0) scale(1); opacity: 0.85; }
+  60%  { opacity: 0.6; }
+  100% { transform: translate(var(--dx, 0), var(--dy, -30px)) scale(0.2); opacity: 0; }
 }
 
 /* ── DOSTOEVSKY THEME ── */
