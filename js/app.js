@@ -133,7 +133,7 @@ document.getElementById('begin-btn').addEventListener('click', async () => {
     updateCount();
     showBalanceSuggestion();
 
-    document.getElementById('headlines-section').scrollIntoView({ behavior: 'smooth' });
+    document.getElementById('headlines-section').scrollIntoView({ behavior: 'smooth', block: 'start' });
   } catch (err) {
     console.error(err);
     alert('Press jammed. Please try again.\n' + err.message);
@@ -172,6 +172,7 @@ document.getElementById('erasure-btn').addEventListener('click', () => {
   applyTheme();
   showWorkspace();
   updatePoem();
+  window.scrollTo({ top: 0, behavior: 'smooth' });
 });
 
 // ── Workspace buttons ──

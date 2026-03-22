@@ -457,6 +457,22 @@ body {
   border-radius: 1px;
 }
 
+/* Un-erase flash animation (double-tap restore) */
+@keyframes unerase-flash {
+  0%   { background: #c49a3c; }
+  100% { background: transparent; }
+}
+.w.unerase-flash {
+  animation: unerase-flash 0.4s ease-out;
+}
+
+/* Mobile/desktop instruction toggle */
+.instruct-mobile { display: none; }
+@media (pointer: coarse) {
+  .instruct-desktop { display: none !important; }
+  .instruct-mobile { display: inline !important; }
+}
+
 /* ── POEM PANEL ── */
 .poem-panel { border-bottom: 3px double var(--rule); }
 
@@ -906,12 +922,10 @@ body {
   /* Wrapper */
   .newspaper { margin: 0; }
 
-  /* Nameplate */
+  /* Nameplate — 2 items, keep side by side */
   .nameplate-date-row {
-    flex-direction: column;
-    gap: 0.15rem;
-    text-align: center;
-    padding: 0.4rem 0.8rem;
+    padding: 0.3rem 0.8rem;
+    font-size: 0.5rem;
   }
 
   /* Setup */

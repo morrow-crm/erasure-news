@@ -1,4 +1,4 @@
-import { getState } from './erasure.js';
+import { getState, isTouchDevice } from './erasure.js';
 import { POEM_LINE_LENGTH } from './config.js';
 
 /** Whether the user has manually edited the poem. */
@@ -9,7 +9,7 @@ function el() {
   return document.getElementById('poem-display');
 }
 
-/** Get all kept words in document order. */
+/** Get all kept words in document order (desktop behavior). */
 export function getKeptWords() {
   const { layers, wState } = getState();
   const out = [];
@@ -25,9 +25,26 @@ export function getKeptWords() {
   return out;
 }
 
-/** Build plain-text poem from kept words. */
+/** Get all surviving (non-erased) words in document order (mobile behavior). */
+function getSurvivingWords() {
+  const { layers, wState } = getState();
+  const out = [];
+  layers.forEach((_, li) => {
+    const layer = document.getElementById(`al-${li}`);
+    if (!layer) return;
+    layer.querySelectorAll('.w').forEach(s => {
+      const key = `${li}-${s.dataset.wi}`;
+      if (wState[key] !== 'erased') {
+        out.push({ text: s.textContent, li });
+      }
+    });
+  });
+  return out;
+}
+
+/** Build plain-text poem from the appropriate word set. */
 function buildPoemText() {
-  const words = getKeptWords();
+  const words = isTouchDevice() ? getSurvivingWords() : getKeptWords();
   let t = '';
   words.forEach((w, i) => {
     t += w.text;
