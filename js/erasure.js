@@ -1,5 +1,7 @@
 import { h } from './ui.js';
 import { updatePoem } from './poem.js';
+import { getTheme } from './theme.js';
+import { burnWord, onWordAction, isFascismWord } from './dostoevsky.js';
 
 // ── State shared across this module ──
 let layers = [];
@@ -122,7 +124,18 @@ function act(span, mode) {
     undoStack.push({ key, prev });
     wState[key] = 'erased';
     span.classList.remove('kept');
-    span.classList.add('erased');
+
+    // Dostoevsky: fire-and-ash burn animation
+    if (getTheme() === 'dostoevsky') {
+      burnWord(span).then(() => {
+        span.classList.add('erased');
+        updatePoem();
+        onWordAction();
+      });
+    } else {
+      span.classList.add('erased');
+      updatePoem();
+    }
   } else {
     if (prev === 'erased') return;
     undoStack.push({ key, prev });
@@ -133,8 +146,9 @@ function act(span, mode) {
       wState[key] = 'kept';
       span.classList.add('kept');
     }
+    updatePoem();
+    onWordAction();
   }
-  updatePoem();
 }
 
 /** Undo the last erase/keep action. */

@@ -1024,7 +1024,7 @@ body {
 /* ── DOSTOEVSKY THEME ── */
 .theme-dostoevsky #workspace {
   --black:  #080808;
-  --ink:    #b0b4bc;
+  --ink:    #c8ccd4;
   --paper:  #1a1c20;
   --offwhite: #1e2026;
   --rule:   #2a2c30;
@@ -1033,25 +1033,45 @@ body {
 }
 
 .theme-dostoevsky #workspace .w {
-  color: #b0b4bc;
+  color: #c8ccd4;
+  transition: color 0.15s, text-shadow 0.15s;
 }
 .theme-dostoevsky #workspace .w:hover {
   background: rgba(255,255,255,0.05);
 }
-.theme-dostoevsky #workspace .w.erased {
-  background: #080808 !important;
-  color: #080808 !important;
-  box-shadow: 0 -1px 0 #080808, 0 2px 0 #080808;
+/* Ash bar — the final erased state (fire animation applies via JS) */
+.theme-dostoevsky #workspace .w.erased,
+.theme-dostoevsky #workspace .w.dosto-ash {
+  background: #0a0a0c !important;
+  color: #0a0a0c !important;
+  box-shadow: 0 -1px 0 #0a0a0c, 0 2px 0 #0a0a0c;
+  text-shadow: none !important;
+}
+.theme-dostoevsky #workspace .w.dosto-burning {
+  display: inline-block;
+  position: relative;
+  z-index: 2;
 }
 .theme-dostoevsky #workspace .w.kept {
   outline-color: #4a6fa5;
 }
+/* Fascism-transformed words */
+.theme-dostoevsky #workspace .w.dosto-fascism {
+  color: #8b0000 !important;
+  font-weight: 700;
+  text-shadow: 0 0 6px rgba(139,0,0,0.25);
+}
+.theme-dostoevsky #workspace .w.dosto-fascism-glow {
+  color: #cc0000 !important;
+  text-shadow: 0 0 12px rgba(200,0,0,0.5);
+  transition: color 0.2s, text-shadow 0.2s;
+}
 .theme-dostoevsky #workspace .art-hed {
-  color: #d4d4d4;
+  color: #e8e8e8;
   font-weight: 900;
 }
 .theme-dostoevsky #workspace .art-body {
-  color: #b0b4bc;
+  color: #c8ccd4;
 }
 .theme-dostoevsky #workspace .art-byline {
   color: #5a5e68;
@@ -1093,61 +1113,173 @@ body {
   );
 }
 .theme-dostoevsky #workspace .poem-panel {
-  background: #12141a;
+  background: #0e1014;
   border-bottom-color: #2a2c30;
 }
 .theme-dostoevsky #workspace .poem-head {
-  background: #14161c;
+  background: #10121a;
   border-bottom-color: #2a2c30;
 }
 .theme-dostoevsky #workspace .poem-kicker {
-  color: #5a5e68;
+  color: #a0a4ac;
 }
 .theme-dostoevsky #workspace .poem-rule {
   background: #2a2c30;
 }
 .theme-dostoevsky #workspace #poem-display {
-  color: #c8ccd4;
+  color: #e8e8e8;
+  background: #0e1014;
 }
 .theme-dostoevsky #workspace #poem-display:empty::before {
-  color: #3a3e48;
+  color: #4a4e58;
 }
 .theme-dostoevsky #workspace .poem-toolbar {
   border-bottom-color: #2a2c30;
 }
 .theme-dostoevsky #workspace .fmt-btn {
-  border-color: #2a2c30;
-  color: #5a5e68;
+  border-color: #4a4e58;
+  color: #c0c4cc;
 }
 .theme-dostoevsky #workspace .fmt-btn:hover {
   border-color: #4a6fa5;
-  color: #8a8e98;
+  color: #e8e8e8;
 }
 .theme-dostoevsky #workspace .abtn {
-  border-color: #2a2c30;
-  color: #5a5e68;
+  border-color: #4a4e58;
+  color: #c0c4cc;
 }
 .theme-dostoevsky #workspace .abtn:hover {
   border-color: #4a6fa5;
-  color: #8a8e98;
+  color: #e8e8e8;
 }
 .theme-dostoevsky #workspace .abtn.primary {
   background: #8b2020;
   border-color: #8b2020;
-  color: #c8ccd4;
+  color: #e8e8e8;
 }
 .theme-dostoevsky #workspace .ws-instruct {
   background: #14161c;
   border-bottom-color: #2a2c30;
 }
 .theme-dostoevsky #workspace .instruct-flag {
-  color: #6a6e78;
+  color: #9094a0;
 }
 .theme-dostoevsky #workspace .instruct-copy {
-  color: #5a5e68;
+  color: #9094a0;
 }
 .theme-dostoevsky #workspace .instruct-copy strong {
-  color: #8a8e98;
+  color: #c0c4cc;
+}
+
+/* ── DOSTOEVSKY: ASH PARTICLES ── */
+.dosto-ash-particle {
+  position: fixed;
+  width: 3px;
+  height: 3px;
+  border-radius: 50%;
+  background: #4a4a4a;
+  pointer-events: none;
+  z-index: 200;
+  animation: dosto-ash-fall 2s ease-out forwards;
+  opacity: 0.7;
+}
+@keyframes dosto-ash-fall {
+  0%   { transform: translate(0, 0) scale(1); opacity: 0.7; }
+  100% { transform: translate(var(--drift-x, 0), var(--fall-dist, 40px)) scale(0.3); opacity: 0; }
+}
+
+/* ── DOSTOEVSKY: SPARK (from crow pecks) ── */
+.dosto-spark {
+  position: fixed;
+  width: 3px;
+  height: 3px;
+  background: #e8a030;
+  border-radius: 50%;
+  pointer-events: none;
+  z-index: 200;
+  animation: dosto-spark-fly 0.4s ease-out forwards;
+}
+@keyframes dosto-spark-fly {
+  0%   { transform: translate(0, 0) scale(1); opacity: 1; }
+  100% { transform: translate(var(--spark-dx, 10px), var(--spark-dy, -15px)) scale(0.2); opacity: 0; }
+}
+
+/* ── DOSTOEVSKY: CROW ── */
+.dosto-crow {
+  position: fixed;
+  pointer-events: none;
+  z-index: 150;
+}
+.crow-wing {
+  transform-origin: 22px 24px;
+  transition: transform 0.3s;
+}
+.crow-wing.crow-flying {
+  animation: crow-flap 0.4s ease-in-out infinite alternate;
+}
+@keyframes crow-flap {
+  0%   { transform: rotate(0deg) scaleY(1); }
+  100% { transform: rotate(-25deg) scaleY(0.9); }
+}
+.crow-landing .crow-wing {
+  animation: crow-land-wings 0.4s ease-out;
+}
+@keyframes crow-land-wings {
+  0%   { transform: rotate(-30deg); }
+  50%  { transform: rotate(10deg); }
+  100% { transform: rotate(0deg); }
+}
+.crow-pecking .crow-body-group {
+  animation: crow-peck 0.15s ease-in-out;
+}
+@keyframes crow-peck {
+  0%   { transform: rotate(0deg); }
+  50%  { transform: rotate(12deg) translateY(2px); }
+  100% { transform: rotate(0deg); }
+}
+.crow-watching .crow-body-group {
+  transform: rotate(-5deg);
+}
+
+/* ── DOSTOEVSKY: RAIN ── */
+.dosto-rain {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  pointer-events: none;
+  z-index: 0;
+}
+.dosto-rain-streak {
+  position: absolute;
+  top: -10%;
+  width: 1px;
+  height: 30%;
+  background: linear-gradient(to bottom, transparent, #1e2530 30%, #1e2530 70%, transparent);
+  animation: dosto-rain-fall linear infinite;
+}
+@keyframes dosto-rain-fall {
+  0%   { transform: translateY(-10vh); }
+  100% { transform: translateY(130vh); }
+}
+
+/* ── DOSTOEVSKY: TEXT FLICKER ── */
+.dosto-flicker {
+  animation: dosto-text-flicker 0.3s ease-in-out;
+}
+@keyframes dosto-text-flicker {
+  0%   { opacity: 1; }
+  30%  { opacity: 0.5; }
+  60%  { opacity: 0.85; }
+  100% { opacity: 1; }
+}
+
+/* ── DOSTOEVSKY: RED STRING CANVAS ── */
+.dosto-red-string {
+  position: absolute;
+  top: 0;
+  left: 0;
+  pointer-events: none;
+  z-index: 1;
 }
 
 /* ── MOBILE RESPONSIVE ── */
