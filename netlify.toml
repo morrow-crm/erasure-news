@@ -6,3 +6,8 @@
   from = "/api/fetch-article"
   to = "/.netlify/functions/fetch-article"
   status = 200
+
+[[redirects]]
+  from = "/api/increment-counter"
+  to = "/.netlify/functions/increment-counter"
+  status = 200
