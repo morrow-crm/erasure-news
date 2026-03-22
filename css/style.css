@@ -1075,18 +1075,16 @@ body {
   background: rgba(139,0,0,0.08);
   text-shadow: 0 0 4px rgba(139,0,0,0.15);
 }
-/* Disintegrated word — invisible, collapses */
+/* Erased word — invisible blank space, layout preserved */
 .theme-dostoevsky #workspace .w.erased,
 .theme-dostoevsky #workspace .w.dosto-gone {
-  font-size: 0 !important;
-  width: 0 !important;
-  padding: 0 !important;
-  margin: 0 !important;
-  border: none !important;
-  opacity: 0 !important;
-  overflow: hidden;
+  visibility: hidden !important;
+  color: transparent !important;
+  background: none !important;
+  text-shadow: none !important;
+  border-color: transparent !important;
+  outline-color: transparent !important;
   pointer-events: none;
-  transition: font-size 0.3s, width 0.3s, opacity 0.3s, margin 0.3s;
 }
 .theme-dostoevsky #workspace .w.dosto-disintegrating {
   display: inline-block;
@@ -1357,6 +1355,23 @@ body {
   left: 0;
   pointer-events: none;
   z-index: 1;
+}
+
+/* ── DOSTOEVSKY: ASH ACCUMULATION CANVAS ── */
+.dosto-ash-canvas {
+  display: block;
+  width: 100%;
+  pointer-events: none;
+  position: relative;
+  z-index: 1;
+}
+
+/* ── DOSTOEVSKY: FALLING ASH PARTICLES ── */
+.dosto-falling-ash {
+  position: fixed;
+  border-radius: 1px;
+  pointer-events: none;
+  z-index: 200;
 }
 
 /* ── MOBILE RESPONSIVE ── */

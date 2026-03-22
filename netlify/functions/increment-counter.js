@@ -1,5 +1,14 @@
 const { getStore } = require('@netlify/blobs');
 
+// Launch date: March 2026
+const LAUNCH_YEAR = 2026;
+const LAUNCH_MONTH = 3; // March
+
+function getVolume() {
+  const now = new Date();
+  return (now.getFullYear() - LAUNCH_YEAR) * 12 + (now.getMonth() + 1 - LAUNCH_MONTH) + 1;
+}
+
 const CORS_HEADERS = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
@@ -11,29 +20,27 @@ exports.handler = async (event) => {
     return { statusCode: 204, headers: CORS_HEADERS, body: '' };
   }
 
-  const volume = new Date().getMonth() + 1; // January = 1
+  const volume = getVolume();
 
   try {
     const store = getStore({ name: 'edition-counter', consistency: 'strong' });
 
     if (event.httpMethod === 'GET') {
-      // Read current count without incrementing
       const raw = await store.get('count');
       let count = raw ? parseInt(raw, 10) : 0;
-      if (isNaN(count)) count = 0;
+      if (isNaN(count) || count < 1) count = 0;
 
       return {
         statusCode: 200,
         headers: { ...CORS_HEADERS, 'Content-Type': 'application/json' },
-        body: JSON.stringify({ volume, number: count }),
+        body: JSON.stringify({ volume, number: count || null }),
       };
     }
 
     if (event.httpMethod === 'POST') {
-      // Read, increment, save
       const raw = await store.get('count');
       let count = raw ? parseInt(raw, 10) : 0;
-      if (isNaN(count)) count = 0;
+      if (isNaN(count) || count < 0) count = 0;
 
       count += 1;
       await store.set('count', String(count));

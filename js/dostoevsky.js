@@ -30,6 +30,13 @@ let destroyCount = 0;
 let fascismSpans = new Set();
 let dreadTimer = null;
 
+// ── Ash accumulation state ──
+let ashCanvas = null;
+let ashCtx = null;
+let ashHeights = null;       // Float32Array — mound height at each pixel column
+let ashDriftParticles = [];  // ambient drifting particles above mounds
+let ashAnimFrame = null;     // rAF id for ambient drift
+
 function pick(arr) { return arr[Math.floor(Math.random() * arr.length)]; }
 function rand(lo, hi) { return lo + Math.random() * (hi - lo); }
 function isMobile() { return window.matchMedia('(pointer: coarse)').matches; }
@@ -161,7 +168,10 @@ export function disintegrateWord(span) {
       p.addEventListener('animationend', () => p.remove());
     }
 
-    // Collapse the word to nothing after a brief delay
+    // Spawn falling ash that drifts down to the ash canvas
+    spawnFallingAsh(rect);
+
+    // Mark the word invisible after a brief delay
     setTimeout(() => {
       if (destroyed) { resolve(); return; }
       span.classList.remove('dosto-disintegrating');
@@ -499,6 +509,7 @@ function crowFlyAway() {
   const flightDur = rand(3000, 4500);
   const flightStart = performance.now();
 
+  let ashDisturbed = false;
   function animateExit(now) {
     if (destroyed) return;
     const t = Math.min((now - flightStart) / flightDur, 1);
@@ -508,6 +519,19 @@ function crowFlyAway() {
     crowEl.style.left = `${x}px`;
     crowEl.style.top = `${y}px`;
     if (shadow) shadow.style.opacity = `${0.2 * (1 - t)}`;
+
+    // Disturb ash if crow passes near the bottom
+    if (!ashDisturbed && ashCanvas) {
+      const ashRect = ashCanvas.getBoundingClientRect();
+      if (y > ashRect.top - 40) {
+        ashDisturbed = true;
+        const wrapper = document.getElementById('article-wrapper');
+        if (wrapper) {
+          const localX = x - wrapper.getBoundingClientRect().left;
+          disturbAsh(localX);
+        }
+      }
+    }
 
     if (t < 1) requestAnimationFrame(animateExit);
     else {
@@ -653,6 +677,267 @@ export function getRedStringPositions() {
 }
 
 // ══════════════════════════════════════════════════════════════
+//  ASH ACCUMULATION
+// ══════════════════════════════════════════════════════════════
+
+const ASH_H_DESKTOP = 60;
+const ASH_H_MOBILE = 40;
+const ASH_COLORS = ['#2a2a2a', '#4a4a4a', '#8a8a8a'];
+const MAX_MOUND_RATIO = 0.85; // mounds never exceed 85% of canvas height
+
+function getAshHeight() { return isMobile() ? ASH_H_MOBILE : ASH_H_DESKTOP; }
+
+function initAshCanvas() {
+  const wrapper = document.getElementById('article-wrapper');
+  if (!wrapper) return;
+
+  const h = getAshHeight();
+  ashCanvas = document.createElement('canvas');
+  ashCanvas.className = 'dosto-ash-canvas';
+  ashCanvas.style.width = '100%';
+  ashCanvas.style.height = `${h}px`;
+  wrapper.appendChild(ashCanvas);
+
+  ashCanvas.width = wrapper.offsetWidth;
+  ashCanvas.height = h;
+  ashCtx = ashCanvas.getContext('2d');
+  ashHeights = new Float32Array(ashCanvas.width);
+  ashDriftParticles = [];
+
+  window.addEventListener('resize', resizeAshCanvas);
+  startAshDriftLoop();
+}
+
+function resizeAshCanvas() {
+  const wrapper = document.getElementById('article-wrapper');
+  if (!wrapper || !ashCanvas) return;
+  const oldW = ashCanvas.width;
+  const newW = wrapper.offsetWidth;
+  const h = getAshHeight();
+  ashCanvas.width = newW;
+  ashCanvas.height = h;
+  ashCanvas.style.height = `${h}px`;
+  ashCtx = ashCanvas.getContext('2d');
+
+  // Rescale heightmap
+  if (ashHeights && oldW > 0) {
+    const old = ashHeights;
+    ashHeights = new Float32Array(newW);
+    for (let i = 0; i < newW; i++) {
+      ashHeights[i] = old[Math.floor(i * oldW / newW)] || 0;
+    }
+  } else {
+    ashHeights = new Float32Array(newW);
+  }
+  drawMounds();
+}
+
+/** Add ash at a horizontal position (in canvas-local x). Spreads a small mound. */
+function addAshAtPosition(canvasX) {
+  if (!ashHeights || !ashCanvas) return;
+  const w = ashCanvas.width;
+  const maxH = ashCanvas.height * MAX_MOUND_RATIO;
+  const cx = Math.max(0, Math.min(w - 1, Math.round(canvasX)));
+
+  // Add a small irregular mound (spread ~20-40px wide)
+  const spread = rand(20, 40);
+  const peakAdd = rand(2, 5);
+  for (let dx = -spread; dx <= spread; dx++) {
+    const x = cx + dx;
+    if (x < 0 || x >= w) continue;
+    const dist = Math.abs(dx) / spread;
+    // Irregular falloff with noise
+    const falloff = Math.pow(1 - dist, 2) * (0.7 + Math.random() * 0.3);
+    const add = peakAdd * falloff;
+    ashHeights[x] = Math.min(maxH, ashHeights[x] + add);
+  }
+
+  // Spawn a couple ambient drift particles above the new mound
+  const driftCount = Math.random() > 0.5 ? 1 : 2;
+  for (let i = 0; i < driftCount; i++) {
+    ashDriftParticles.push({
+      x: cx + rand(-10, 10),
+      y: ashCanvas.height - ashHeights[cx] - rand(2, 8),
+      vy: -rand(0.1, 0.3),
+      vx: rand(-0.15, 0.15),
+      life: rand(3, 6), // seconds
+      age: 0,
+      size: rand(1, 2.5),
+      color: pick(ASH_COLORS),
+    });
+  }
+
+  drawMounds();
+}
+
+/** Draw the ash mounds on canvas with organic lumpy shapes and gradient. */
+function drawMounds() {
+  if (!ashCtx || !ashCanvas || !ashHeights) return;
+  const w = ashCanvas.width;
+  const h = ashCanvas.height;
+  ashCtx.clearRect(0, 0, w, h);
+
+  // Check if there's any ash
+  let hasAsh = false;
+  for (let i = 0; i < w; i++) {
+    if (ashHeights[i] > 0.5) { hasAsh = true; break; }
+  }
+  if (!hasAsh) return;
+
+  // Draw mound shape — fill from bottom up to height
+  // Use gradient: darker at base, lighter at peaks
+  const grad = ashCtx.createLinearGradient(0, h, 0, 0);
+  grad.addColorStop(0, '#1e1e1e');
+  grad.addColorStop(0.3, '#2a2a2a');
+  grad.addColorStop(0.6, '#4a4a4a');
+  grad.addColorStop(1, '#7a7a7a');
+
+  ashCtx.fillStyle = grad;
+  ashCtx.beginPath();
+  ashCtx.moveTo(0, h);
+  for (let x = 0; x < w; x++) {
+    ashCtx.lineTo(x, h - ashHeights[x]);
+  }
+  ashCtx.lineTo(w, h);
+  ashCtx.closePath();
+  ashCtx.fill();
+
+  // Add subtle lumpy texture on top edge
+  ashCtx.strokeStyle = 'rgba(138,138,138,0.15)';
+  ashCtx.lineWidth = 0.8;
+  ashCtx.beginPath();
+  for (let x = 0; x < w; x++) {
+    if (ashHeights[x] > 1) {
+      ashCtx.lineTo(x, h - ashHeights[x] + Math.sin(x * 0.3) * 0.5);
+    } else {
+      ashCtx.moveTo(x, h);
+    }
+  }
+  ashCtx.stroke();
+}
+
+/** Spawn falling ash particles from a word position down to the ash canvas. */
+function spawnFallingAsh(wordRect) {
+  if (!ashCanvas || destroyed) return;
+  const wrapper = document.getElementById('article-wrapper');
+  if (!wrapper) return;
+
+  const wrapperRect = wrapper.getBoundingClientRect();
+  const canvasRect = ashCanvas.getBoundingClientRect();
+  const mobile = isMobile();
+  const count = mobile ? 3 : 6;
+
+  for (let i = 0; i < count; i++) {
+    const startX = wordRect.left + rand(0, wordRect.width) - wrapperRect.left;
+    const startY = wordRect.top + rand(0, wordRect.height);
+    const endY = canvasRect.top + rand(0, 5);
+    const canvasLocalX = startX; // already wrapper-relative
+
+    const particle = document.createElement('div');
+    particle.className = 'dosto-falling-ash';
+    const color = pick(ASH_COLORS);
+    particle.style.background = color;
+    particle.style.left = `${wordRect.left + rand(0, wordRect.width)}px`;
+    particle.style.top = `${startY}px`;
+    particle.style.width = `${rand(2, 4)}px`;
+    particle.style.height = `${rand(2, 4)}px`;
+    document.body.appendChild(particle);
+
+    // Animate falling with drift
+    const duration = rand(2000, 3000);
+    const driftX = rand(-30, 30);
+    const fallStart = performance.now();
+    const pStartX = parseFloat(particle.style.left);
+    const pStartY = startY;
+
+    function animateFall(now) {
+      if (destroyed) { particle.remove(); return; }
+      const t = Math.min((now - fallStart) / duration, 1);
+      // Ease out for gentle landing
+      const e = 1 - Math.pow(1 - t, 2);
+      const x = pStartX + driftX * e + Math.sin(t * Math.PI * 3) * 3;
+      const y = pStartY + (endY - pStartY) * e;
+      particle.style.left = `${x}px`;
+      particle.style.top = `${y}px`;
+      particle.style.opacity = `${0.8 - t * 0.3}`;
+
+      if (t < 1) {
+        requestAnimationFrame(animateFall);
+      } else {
+        particle.remove();
+        // Land on ash canvas
+        addAshAtPosition(canvasLocalX);
+      }
+    }
+    // Stagger start
+    setTimeout(() => {
+      if (!destroyed) requestAnimationFrame(animateFall);
+      else particle.remove();
+    }, i * rand(100, 200));
+  }
+}
+
+/** Disturb ash mounds near a position — tiny puff rises. */
+function disturbAsh(canvasX) {
+  if (!ashHeights || !ashCanvas) return;
+  const w = ashCanvas.width;
+  const cx = Math.round(canvasX);
+  if (cx < 0 || cx >= w || ashHeights[cx] < 2) return;
+
+  // Spawn 2-3 upward drift particles
+  for (let i = 0; i < rand(2, 4); i++) {
+    ashDriftParticles.push({
+      x: cx + rand(-15, 15),
+      y: ashCanvas.height - ashHeights[cx] - rand(0, 4),
+      vy: -rand(0.4, 0.8),
+      vx: rand(-0.3, 0.3),
+      life: rand(1.5, 3),
+      age: 0,
+      size: rand(1.5, 3),
+      color: pick(ASH_COLORS),
+    });
+  }
+}
+
+/** Animate ambient drift particles above mounds. */
+function startAshDriftLoop() {
+  let lastTime = performance.now();
+
+  function tick(now) {
+    if (destroyed) return;
+    const dt = (now - lastTime) / 1000;
+    lastTime = now;
+
+    if (!ashCtx || !ashCanvas) { ashAnimFrame = requestAnimationFrame(tick); return; }
+
+    // Redraw mounds + particles
+    drawMounds();
+
+    // Draw and update drift particles
+    for (let i = ashDriftParticles.length - 1; i >= 0; i--) {
+      const p = ashDriftParticles[i];
+      p.age += dt;
+      if (p.age >= p.life) {
+        ashDriftParticles.splice(i, 1);
+        continue;
+      }
+      p.x += p.vx;
+      p.y += p.vy;
+      const alpha = 0.3 * (1 - p.age / p.life);
+      ashCtx.fillStyle = p.color;
+      ashCtx.globalAlpha = alpha;
+      ashCtx.beginPath();
+      ashCtx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
+      ashCtx.fill();
+    }
+    ashCtx.globalAlpha = 1;
+
+    ashAnimFrame = requestAnimationFrame(tick);
+  }
+  ashAnimFrame = requestAnimationFrame(tick);
+}
+
+// ══════════════════════════════════════════════════════════════
 //  PUBLIC API
 // ══════════════════════════════════════════════════════════════
 
@@ -666,6 +951,7 @@ export function initDostoevsky() {
   startFlicker();
   startDreadPulse();
   initRedString();
+  initAshCanvas();
   scheduleCrow();
 
   // Inject "No undoing fate" label if not present
@@ -693,6 +979,15 @@ export function destroyDostoevsky() {
     redCanvas.remove();
     redCanvas = null;
     redCtx = null;
+  }
+  if (ashCanvas) {
+    window.removeEventListener('resize', resizeAshCanvas);
+    if (ashAnimFrame) { cancelAnimationFrame(ashAnimFrame); ashAnimFrame = null; }
+    ashCanvas.remove();
+    ashCanvas = null;
+    ashCtx = null;
+    ashHeights = null;
+    ashDriftParticles = [];
   }
   // Remove fate label
   const label = document.querySelector('.dosto-fate-label');
