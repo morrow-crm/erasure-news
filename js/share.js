@@ -73,11 +73,19 @@ export async function ensureCounted() {
   return incrementCounter();
 }
 
+function getPoemTitle() {
+  const el = document.getElementById('share-title-input');
+  return el ? el.value.trim() : '';
+}
+
 function shareString() {
   const { layers } = getState();
   const sources = layers.map(l => l.short).join('/');
-  const edition = getEditionString();
-  return `${edition} \u2014 erasure from ${sources} \u00b7 ${dateShort} \u00b7 Is it news or poetry? You decide! #ErasureNews #erasurepoetry`;
+  const title = getPoemTitle();
+  if (title) {
+    return `"${title}" \u2014 erasure from ${sources} \u00b7 ${dateShort} \u00b7 #ErasureNews #erasurepoetry`;
+  }
+  return `${getEditionString()} \u2014 erasure from ${sources} \u00b7 ${dateShort} \u00b7 Is it news or poetry? You decide! #ErasureNews #erasurepoetry`;
 }
 
 export async function openShare() {
@@ -99,6 +107,15 @@ export async function openShare() {
     `${edition} \u00b7 Topics: ${[...new Set(layers.map(l => l.topic))].join(', ')} \u00b7 Erasure News \u00b7 ${dateShort}`;
   document.getElementById('share-date').textContent = dateShort;
   document.getElementById('share-modal').classList.add('show');
+
+  // Re-render card when title changes
+  const titleInput = document.getElementById('share-title-input');
+  const rerender = () => renderCard(poem);
+  titleInput.removeEventListener('input', rerender);
+  titleInput.addEventListener('input', rerender);
+  // Store for cleanup
+  titleInput._rerenderFn = rerender;
+
   renderCard(poem);
 }
 
@@ -225,126 +242,220 @@ function drawCrosshatch(ctx, W, H) {
   }
 }
 
+/** Word-wrap text into lines that fit within maxWidth. */
+function wrapText(ctx, text, maxWidth) {
+  const words = text.split(' ');
+  const lines = [];
+  let line = '';
+  for (const word of words) {
+    const test = line ? `${line} ${word}` : word;
+    if (ctx.measureText(test).width > maxWidth && line) {
+      lines.push(line);
+      line = word;
+    } else {
+      line = test;
+    }
+  }
+  if (line) lines.push(line);
+  return lines;
+}
+
+/** Draw a small leaf/butterfly motif for Tolstoy card. */
+function drawLeafMotif(ctx, x, y, color) {
+  ctx.save();
+  ctx.strokeStyle = color;
+  ctx.fillStyle = color;
+  ctx.globalAlpha = 0.2;
+  ctx.lineWidth = 1;
+  // Small leaf cluster
+  ctx.beginPath();
+  ctx.moveTo(x, y);
+  ctx.quadraticCurveTo(x + 12, y - 8, x + 20, y);
+  ctx.quadraticCurveTo(x + 12, y + 8, x, y);
+  ctx.fill();
+  ctx.beginPath();
+  ctx.moveTo(x + 6, y - 2);
+  ctx.quadraticCurveTo(x + 16, y - 12, x + 26, y - 4);
+  ctx.quadraticCurveTo(x + 16, y + 2, x + 6, y - 2);
+  ctx.fill();
+  ctx.restore();
+}
+
 function renderCard(poem) {
   const { layers } = getState();
   const theme = getTheme();
   const t = CARD_THEMES[theme] || CARD_THEMES.default;
   const edition = getEditionString();
+  const title = getPoemTitle();
   const canvas = document.getElementById('share-canvas');
-  const W = 520, H = 310;
+  const W = 1200, H = 630;
   canvas.width = W;
   canvas.height = H;
   canvas.style.width = '100%';
   canvas.style.height = 'auto';
   const ctx = canvas.getContext('2d');
 
-  // Background
+  // ── Background ──
   ctx.fillStyle = t.bg;
   ctx.fillRect(0, 0, W, H);
 
   // Dostoevsky crosshatch
   if (t.crosshatch) drawCrosshatch(ctx, W, H);
 
-  // Ruled lines
+  // Faint ruled lines
   ctx.strokeStyle = t.ruledLine;
   ctx.lineWidth = 1;
-  for (let y = 24; y < H; y += 24) {
+  for (let y = 48; y < H; y += 48) {
     ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(W, y); ctx.stroke();
   }
 
-  // Borders
+  // ── Borders ──
   ctx.strokeStyle = t.border;
-  ctx.lineWidth = 2;
-  ctx.strokeRect(12, 12, W - 24, H - 24);
-  ctx.lineWidth = 0.5;
-  ctx.strokeRect(16, 16, W - 32, H - 32);
+  ctx.lineWidth = 3;
+  ctx.strokeRect(24, 24, W - 48, H - 48);
+  ctx.lineWidth = 1;
+  ctx.strokeRect(30, 30, W - 60, H - 60);
 
-  // Tolstoy botanical corners
-  if (t.cornerDeco) drawBotanicalCorners(ctx, W, H, t.border);
+  // Theme-specific decorations
+  if (t.cornerDeco) {
+    drawBotanicalCorners(ctx, W, H, t.border);
+    // Extra leaf motifs for larger card
+    drawLeafMotif(ctx, 50, 56, t.border);
+    drawLeafMotif(ctx, W - 76, H - 56, t.border);
+  }
 
-  // Nameplate
+  // ── Nameplate band ──
   ctx.fillStyle = t.nameplateBg;
-  ctx.fillRect(12, 12, W - 24, 40);
+  ctx.fillRect(24, 24, W - 48, 72);
   ctx.fillStyle = t.nameplateText;
-  ctx.font = 'bold 18px Georgia, serif';
+  ctx.font = 'bold 36px "Playfair Display", Georgia, serif';
   ctx.textAlign = 'center';
-  ctx.fillText('ERASURE NEWS', W / 2, 38);
+  ctx.fillText('ERASURE NEWS', W / 2, 70);
 
-  // Edition line
+  // ── Edition + theme label ──
   ctx.fillStyle = t.editionText;
-  ctx.font = '9px "Courier New", monospace';
-  ctx.textAlign = 'center';
+  ctx.font = '16px "Courier New", monospace';
   const editionStr = t.themeLabel ? `${edition}  \u00b7  ${t.themeLabel}` : edition;
-  ctx.fillText(editionStr, W / 2, 60);
+  ctx.fillText(editionStr, W / 2, 114);
 
-  // Rule
+  // ── Rule ──
   ctx.fillStyle = t.ruleColor;
-  ctx.fillRect(12, 64, W - 24, 1);
+  ctx.fillRect(24, 122, W - 48, 2);
 
-  // Source + date
-  ctx.fillStyle = t.metaText;
-  ctx.font = '10px "Courier New", monospace';
-  ctx.textAlign = 'center';
-  ctx.fillText(layers.map(l => l.short).join(' \u00b7 ') + '   \u00b7   ' + dateShort, W / 2, 80);
-
-  // Red string conspiracy lines (Dostoevsky)
+  // ── Red string conspiracy lines (Dostoevsky) ──
   if (t.redString) {
     const positions = getRedStringPositions();
     if (positions.length >= 2) {
       ctx.save();
-      ctx.strokeStyle = 'rgba(139, 0, 0, 0.15)';
-      ctx.lineWidth = 0.5;
-      ctx.setLineDash([3, 3]);
-      const poemAreaTop = 90;
-      const poemAreaH = H - 130;
+      ctx.strokeStyle = 'rgba(139, 0, 0, 0.12)';
+      ctx.lineWidth = 1;
+      ctx.setLineDash([6, 6]);
+      const poemAreaTop = 140;
+      const poemAreaH = H - 240;
       for (let i = 1; i < positions.length; i++) {
         ctx.beginPath();
-        ctx.moveTo(40 + positions[i - 1].x * (W - 80), poemAreaTop + positions[i - 1].y * poemAreaH);
-        ctx.lineTo(40 + positions[i].x * (W - 80), poemAreaTop + positions[i].y * poemAreaH);
+        ctx.moveTo(80 + positions[i - 1].x * (W - 160), poemAreaTop + positions[i - 1].y * poemAreaH);
+        ctx.lineTo(80 + positions[i].x * (W - 160), poemAreaTop + positions[i].y * poemAreaH);
         ctx.stroke();
       }
       ctx.restore();
     }
   }
 
-  // Poem — with fascism words in blood red for Dostoevsky
-  const lines = poem.split('\n');
-  const fascismWords = t.fascismColor ? getFascismWordsInPoem() : [];
-  ctx.font = 'italic 17px Georgia, "Times New Roman", serif';
-  const lh = 28;
-  const totalH = lines.length * lh;
-  let y = Math.max((H - totalH) / 2 + 16 + 28, 100);
-
-  if (fascismWords.length > 0) {
-    // Render word-by-word to color fascism words differently
-    lines.forEach(line => {
-      const words = line.split(/(\s+)/);
-      // Measure total width for centering
-      const fullWidth = ctx.measureText(line).width;
-      let x = (W - fullWidth) / 2;
-      words.forEach(word => {
-        const isFascism = fascismWords.some(fw => word.includes(fw));
-        ctx.fillStyle = isFascism ? t.fascismColor : t.poemText;
-        ctx.textAlign = 'left';
-        ctx.fillText(word, x, y);
-        x += ctx.measureText(word).width;
-      });
-      y += lh;
-    });
-    ctx.textAlign = 'center';
-  } else {
+  // ── Poem title (if provided) ──
+  let poemStartY = 155;
+  if (title) {
     ctx.fillStyle = t.poemText;
-    lines.forEach(line => { ctx.fillText(line, W / 2, y); y += lh; });
+    ctx.font = 'italic 28px "Playfair Display", Georgia, serif';
+    ctx.textAlign = 'center';
+    ctx.fillText(title, W / 2, poemStartY);
+    // Small decorative rule under title
+    ctx.fillStyle = t.ruleColor;
+    ctx.globalAlpha = 0.4;
+    ctx.fillRect(W / 2 - 40, poemStartY + 10, 80, 1);
+    ctx.globalAlpha = 1;
+    poemStartY += 40;
   }
 
-  // Footer
-  ctx.fillStyle = t.footerRule;
-  ctx.fillRect(40, H - 32, W - 80, 1);
-  ctx.fillStyle = t.footerText;
-  ctx.font = '9px "Courier New", monospace';
-  ctx.fillText('Is it news or poetry? You decide!  \u00b7  erasurenews.com', W / 2, H - 18);
+  // ── Poem text — auto-scaling to fit ──
+  const fascismWords = t.fascismColor ? getFascismWordsInPoem() : [];
+  const poemLines = poem.split('\n');
+  const maxPoemWidth = W - 160; // 80px padding each side
+  const availableH = H - poemStartY - 80; // leave room for footer
 
-  // Film grain
+  // Find the right font size (start large, scale down)
+  let fontSize = 32;
+  let lineHeight, wrappedLines;
+  while (fontSize >= 14) {
+    lineHeight = fontSize * 1.7;
+    ctx.font = `italic ${fontSize}px "Playfair Display", Georgia, serif`;
+    wrappedLines = [];
+    for (const line of poemLines) {
+      if (!line.trim()) { wrappedLines.push(''); continue; }
+      wrappedLines.push(...wrapText(ctx, line, maxPoemWidth));
+    }
+    const totalPoemH = wrappedLines.length * lineHeight;
+    if (totalPoemH <= availableH) break;
+    fontSize -= 2;
+  }
+
+  // Center poem vertically in available space
+  const totalPoemH = wrappedLines.length * lineHeight;
+  let y = poemStartY + (availableH - totalPoemH) / 2 + lineHeight * 0.7;
+
+  ctx.font = `italic ${fontSize}px "Playfair Display", Georgia, serif`;
+  ctx.textAlign = 'center';
+
+  for (const line of wrappedLines) {
+    if (!line.trim()) { y += lineHeight * 0.4; continue; }
+
+    if (fascismWords.length > 0) {
+      // Word-by-word rendering for fascism words in blood red
+      const words = line.split(/(\s+)/);
+      const fullWidth = ctx.measureText(line).width;
+      let x = (W - fullWidth) / 2;
+      ctx.textAlign = 'left';
+      for (const word of words) {
+        const isFascism = fascismWords.some(fw => word.includes(fw));
+        ctx.fillStyle = isFascism ? t.fascismColor : t.poemText;
+        ctx.fillText(word, x, y);
+        x += ctx.measureText(word).width;
+      }
+      ctx.textAlign = 'center';
+    } else {
+      ctx.fillStyle = t.poemText;
+      ctx.fillText(line, W / 2, y);
+    }
+    y += lineHeight;
+  }
+
+  // ── Footer ──
+  // Sources + date
+  ctx.fillStyle = t.metaText;
+  ctx.font = '14px "Courier New", monospace';
+  ctx.textAlign = 'center';
+  ctx.fillText(layers.map(l => l.short).join(' \u00b7 ') + '   \u00b7   ' + dateShort, W / 2, H - 55);
+
+  // Footer rule
+  ctx.fillStyle = t.footerRule;
+  ctx.fillRect(80, H - 44, W - 160, 1);
+
+  // Footer text
+  ctx.fillStyle = t.footerText;
+  ctx.font = '13px "Courier New", monospace';
+  ctx.textAlign = 'center';
+  ctx.fillText('Is it news or poetry? You decide!  \u00b7  erasurenews.com', W / 2, H - 28);
+
+  // Theme label bottom-left (Dostoevsky)
+  if (t.themeLabel && t.crosshatch) {
+    ctx.fillStyle = t.footerText;
+    ctx.font = '11px "Courier New", monospace';
+    ctx.textAlign = 'left';
+    ctx.fillText(t.themeLabel, 40, H - 28);
+    ctx.textAlign = 'center';
+  }
+
+  // ── Film grain ──
   const id = ctx.getImageData(0, 0, W, H);
   const d = id.data;
   for (let i = 0; i < d.length; i += 4) {
