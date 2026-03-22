@@ -37,8 +37,28 @@ function updateCount() {
   if (selectedIndices.size === 0) {
     el.textContent = 'Select 1\u20133 stories for erasure';
   } else {
-    el.textContent = `${selectedIndices.size} of 3 selected`;
+    const leans = [...selectedIndices].map(i => headlineData[i]?.sourceObj?.lean).filter(Boolean);
+    const leanSummary = leans.map(l => ({ left: 'L', center: 'C', right: 'R' }[l] || '?')).join(' ');
+    el.textContent = `${selectedIndices.size} of 3 selected \u00B7 ${leanSummary}`;
   }
+}
+
+/** Find a balanced L/C/R suggestion from available headlines. */
+function suggestBalanced() {
+  const leftIdx = headlineData.findIndex(hl => hl.sourceObj?.lean === 'left');
+  const centerIdx = headlineData.findIndex(hl => hl.sourceObj?.lean === 'center');
+  const rightIdx = headlineData.findIndex(hl => hl.sourceObj?.lean === 'right');
+  if (leftIdx >= 0 && centerIdx >= 0 && rightIdx >= 0) {
+    return [leftIdx, centerIdx, rightIdx];
+  }
+  return null;
+}
+
+function showBalanceSuggestion() {
+  const suggestion = suggestBalanced();
+  document.querySelectorAll('.hl-card').forEach((card, i) => {
+    card.classList.toggle('suggested', suggestion !== null && suggestion.includes(i) && selectedIndices.size === 0);
+  });
 }
 
 function onCardClick(index) {
@@ -50,9 +70,11 @@ function onCardClick(index) {
   document.querySelectorAll('.hl-card').forEach((card, i) => {
     card.classList.toggle('selected', selectedIndices.has(i));
     card.classList.toggle('disabled', selectedIndices.size >= 3 && !selectedIndices.has(i));
+    card.classList.remove('suggested');
   });
   document.getElementById('erasure-btn').disabled = selectedIndices.size === 0;
   updateCount();
+  if (selectedIndices.size === 0) showBalanceSuggestion();
 }
 
 function buildParagraphsFromHeadline(hl) {
@@ -107,6 +129,7 @@ document.getElementById('begin-btn').addEventListener('click', async () => {
     document.getElementById('headlines-section').style.display = '';
     document.getElementById('erasure-btn').disabled = true;
     updateCount();
+    showBalanceSuggestion();
 
     document.getElementById('headlines-section').scrollIntoView({ behavior: 'smooth' });
   } catch (err) {
@@ -137,6 +160,9 @@ document.getElementById('erasure-btn').addEventListener('click', () => {
       headline: hl.title || 'Untitled',
       byline: `By ${hl.author} | ${hl.sourceName} | ${pubDate}`,
       paragraphs: buildParagraphsFromHeadline(hl),
+      url: hl.url,
+      sourceName: hl.sourceName,
+      textQuality: hl.textQuality || 'short',
     };
   });
 

@@ -70,13 +70,23 @@ export function buildArticleLayers(articles, wrapper) {
 
     const leanLabel = { left: 'L', center: 'C', right: 'R' }[art.lean] || '';
     const leanClass = art.lean ? `lean-${art.lean}` : '';
+    const srcDisplay = art.s || art.short;
 
     div.innerHTML = `
-      <div class="src-tag">${leanLabel ? `<span class="lean-badge ${leanClass}">${leanLabel}</span> ` : ''}${h(art.short)}</div>
+      <div class="src-tag"><span class="lean-badge ${leanClass}">${leanLabel}</span> ${h(srcDisplay)} <span class="src-lean-label">&middot; ${leanLabel}</span></div>
       <div class="art-kicker">${h(art.topic)}</div>
       <div class="art-hed"></div>
       <div class="art-byline"></div>
       <div class="art-body" id="ab-${li}"></div>`;
+
+    // Add "Read full article" link for partial-text articles
+    if (art.textQuality === 'short' && art.url) {
+      const link = document.createElement('div');
+      link.className = 'art-full-link';
+      link.innerHTML = `Read the full article at <a href="${h(art.url)}" target="_blank" rel="noopener">${h(art.sourceName || art.short)}</a>`;
+      div.appendChild(link);
+    }
+
     wrapper.appendChild(div);
 
     let wi = 0;
