@@ -9,7 +9,7 @@ import {
   buildArticleLayers, attachInteraction, undoLast, resetState, getState,
 } from './erasure.js';
 import { updatePoem, initPoemTextarea, resetPoemState } from './poem.js';
-import { openShare, closeShare, shareToX, shareToMastodon, copyText, downloadCard, setShareDate, downloadBlackout } from './share.js';
+import { openShare, closeShare, shareToX, shareToMastodon, copyText, downloadCard, setShareDate, downloadBlackout, resetEdition } from './share.js';
 
 // ── Dates ──
 const now = new Date();
@@ -178,6 +178,7 @@ document.getElementById('reset-btn').addEventListener('click', () => {
   if (!confirm('Start over?')) return;
   resetState();
   resetPoemState();
+  resetEdition();
   clearHeadlineCards();
   document.getElementById('headlines-section').style.display = 'none';
   headlineData = [];

@@ -2,28 +2,99 @@ import { getState } from './erasure.js';
 import { getPoemString } from './poem.js';
 
 let dateShort = '';
+let editionVolume = new Date().getMonth() + 1;
+let editionNumber = null;
+let sessionCounted = false;
 
 export function setShareDate(d) {
   dateShort = d;
 }
 
-function shareString() {
-  const { layers } = getState();
-  return `"${getPoemString()}"\n\n\u2014 erasure from ${layers.map(l => l.short).join('/')} \u00b7 ${dateShort}\n\nIs it news or poetry? Nobody can say!\n\n#ErasureNews #erasurepoetry #foundpoetry`;
+/** Get the current edition string, e.g. "Vol. 3 · No. 47" or just "Vol. 3". */
+export function getEditionString() {
+  if (editionNumber) {
+    return `Vol. ${editionVolume} \u00b7 No. ${editionNumber}`;
+  }
+  return `Vol. ${editionVolume}`;
 }
 
-export function openShare() {
+/** Set the edition after a successful counter increment. */
+export function setEdition(vol, num) {
+  editionVolume = vol;
+  editionNumber = num;
+}
+
+/** Reset session flag (called on Start Over). */
+export function resetEdition() {
+  sessionCounted = false;
+  editionNumber = null;
+  updateNameplate();
+}
+
+/** Update the nameplate edition label. */
+function updateNameplate() {
+  const el = document.getElementById('edition-label');
+  if (el) el.textContent = getEditionString();
+}
+
+// Set initial nameplate on load
+updateNameplate();
+
+/** Increment the global counter (once per session). Returns {volume, number} or null. */
+async function incrementCounter() {
+  if (sessionCounted) return { volume: editionVolume, number: editionNumber };
+
+  try {
+    const res = await fetch('/api/increment-counter', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: '{}',
+    });
+    const data = await res.json();
+    sessionCounted = true;
+    if (data.number) {
+      editionVolume = data.volume;
+      editionNumber = data.number;
+    }
+    updateNameplate();
+    return data;
+  } catch (err) {
+    console.error('[edition] Counter failed:', err.message);
+    sessionCounted = true; // Don't retry on failure
+    updateNameplate();
+    return null;
+  }
+}
+
+/** Ensure the counter is called (fire-and-forget for downloads, awaited for share). */
+export async function ensureCounted() {
+  return incrementCounter();
+}
+
+function shareString() {
+  const { layers } = getState();
+  const sources = layers.map(l => l.short).join('/');
+  const edition = getEditionString();
+  return `${edition} \u2014 erasure from ${sources} \u00b7 ${dateShort} \u00b7 Is it news or poetry? You decide! #ErasureNews #erasurepoetry`;
+}
+
+export async function openShare() {
   const poem = getPoemString();
   if (!poem) {
     alert('Shift+click words to build your poem first.');
     return;
   }
+
+  // Increment counter before showing modal
+  await ensureCounted();
+
   const { layers } = getState();
+  const edition = getEditionString();
 
   document.getElementById('share-poem-text').textContent = poem;
   document.getElementById('share-sources').textContent = layers.map(l => l.short).join(' \u00b7 ');
   document.getElementById('share-meta').textContent =
-    `Topics: ${[...new Set(layers.map(l => l.topic))].join(', ')} \u00b7 Erasure News \u00b7 ${dateShort}`;
+    `${edition} \u00b7 Topics: ${[...new Set(layers.map(l => l.topic))].join(', ')} \u00b7 Erasure News \u00b7 ${dateShort}`;
   document.getElementById('share-date').textContent = dateShort;
   document.getElementById('share-modal').classList.add('show');
   renderCard(poem);
@@ -52,6 +123,7 @@ export function copyText() {
 
 function renderCard(poem) {
   const { layers } = getState();
+  const edition = getEditionString();
   const canvas = document.getElementById('share-canvas');
   const W = 520, H = 310;
   canvas.width = W;
@@ -86,15 +158,21 @@ function renderCard(poem) {
   ctx.textAlign = 'center';
   ctx.fillText('ERASURE NEWS', W / 2, 38);
 
+  // Edition line beneath nameplate band
+  ctx.fillStyle = '#6b6560';
+  ctx.font = '9px "Courier New", monospace';
+  ctx.textAlign = 'center';
+  ctx.fillText(edition, W / 2, 60);
+
   // Rule
   ctx.fillStyle = '#0d0d0d';
-  ctx.fillRect(12, 52, W - 24, 1);
+  ctx.fillRect(12, 64, W - 24, 1);
 
   // Source + date
   ctx.fillStyle = '#6b6560';
   ctx.font = '10px "Courier New", monospace';
   ctx.textAlign = 'center';
-  ctx.fillText(layers.map(l => l.short).join(' \u00b7 ') + '   \u00b7   ' + dateShort, W / 2, 68);
+  ctx.fillText(layers.map(l => l.short).join(' \u00b7 ') + '   \u00b7   ' + dateShort, W / 2, 80);
 
   // Poem
   const lines = poem.split('\n');
@@ -102,7 +180,7 @@ function renderCard(poem) {
   ctx.font = 'italic 17px Georgia, "Times New Roman", serif';
   const lh = 28;
   const totalH = lines.length * lh;
-  let y = Math.max((H - totalH) / 2 + 16 + 16, 88);
+  let y = Math.max((H - totalH) / 2 + 16 + 28, 100);
   lines.forEach(line => { ctx.fillText(line, W / 2, y); y += lh; });
 
   // Footer
@@ -124,9 +202,11 @@ function renderCard(poem) {
   ctx.putImageData(id, 0, 0);
 }
 
-export function downloadCard() {
+export async function downloadCard() {
   const poem = getPoemString();
   if (!poem) return;
+  // Increment counter before rendering the card
+  await ensureCounted();
   renderCard(poem);
   const canvas = document.getElementById('share-canvas');
   const a = document.createElement('a');
@@ -148,6 +228,9 @@ function loadHtml2Canvas() {
 export async function downloadBlackout() {
   const wrapper = document.getElementById('article-wrapper');
   if (!wrapper) return;
+
+  // Increment counter (fire-and-forget, don't block the download)
+  ensureCounted();
 
   const btn = document.getElementById('dl-blackout-btn');
   const orig = btn.innerHTML;
