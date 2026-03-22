@@ -79,8 +79,9 @@ export function buildArticleLayers(articles, wrapper) {
       <div class="art-byline"></div>
       <div class="art-body" id="ab-${li}"></div>`;
 
-    // Add "Read full article" link for partial-text articles
-    if (art.textQuality === 'short' && art.url) {
+    // Add "Read full article" link for any article under 150 words
+    const artWordCount = (art.paragraphs || []).join(' ').split(/\s+/).filter(Boolean).length;
+    if (artWordCount < 150 && art.url) {
       const link = document.createElement('div');
       link.className = 'art-full-link';
       link.innerHTML = `Read the full article at <a href="${h(art.url)}" target="_blank" rel="noopener">${h(art.sourceName || art.short)}</a>`;

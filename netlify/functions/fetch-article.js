@@ -159,8 +159,9 @@ function rssSourceFromUrl(feedUrl) {
   }
 }
 
-/** Minimal XML text extraction — gets text content from an XML tag. */
-function xmlText(xml, tag) {
+/** Minimal XML text extraction — gets text content from an XML tag.
+ *  stripHtml=false returns raw content (for further processing). */
+function xmlText(xml, tag, stripHtml = true) {
   // Handle namespaced and non-namespaced tags
   const patterns = [
     new RegExp(`<${tag}[^>]*><!\\[CDATA\\[([\\s\\S]*?)\\]\\]></${tag}>`, 'i'),
@@ -168,7 +169,10 @@ function xmlText(xml, tag) {
   ];
   for (const re of patterns) {
     const m = xml.match(re);
-    if (m) return m[1].replace(/<[^>]+>/g, '').trim();
+    if (m) {
+      const raw = m[1].trim();
+      return stripHtml ? raw.replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim() : raw;
+    }
   }
   return '';
 }
@@ -195,14 +199,19 @@ function parseRSSItems(xml, feedUrl, maxItems = 4) {
     const title = xmlText(chunk, 'title');
     if (!title) continue;
 
+    // Extract full content — check content:encoded first (often has full article HTML)
+    let fullContent = '';
     let description = '';
     if (isAtom) {
-      description = xmlText(chunk, 'summary') || xmlText(chunk, 'content');
+      fullContent = xmlText(chunk, 'content') || xmlText(chunk, 'summary');
+      description = xmlText(chunk, 'summary') || fullContent;
     } else {
-      description = xmlText(chunk, 'description') || xmlText(chunk, 'content:encoded');
+      // content:encoded typically has the full article in RSS feeds
+      fullContent = xmlText(chunk, 'content:encoded') || xmlText(chunk, 'description');
+      description = xmlText(chunk, 'description') || fullContent;
     }
-    // Strip HTML and truncate description to something reasonable
-    description = description.replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim();
+    // fullContent is already HTML-stripped by xmlText; cap at 3000 chars for full text
+    if (fullContent.length > 3000) fullContent = fullContent.substring(0, 3000);
     if (description.length > 800) description = description.substring(0, 800);
 
     let link = '';
@@ -222,10 +231,15 @@ function parseRSSItems(xml, feedUrl, maxItems = 4) {
 
     const author = xmlText(chunk, 'author') || xmlText(chunk, 'dc:creator') || '';
 
+    // Use the longer of fullContent vs description
+    const bestContent = fullContent.length > description.length ? fullContent : description;
+    const wc = wordCount(bestContent);
+    console.log(`[RSS] "${title.substring(0, 50)}" (${sourceName}) — ${wc} words`);
+
     items.push({
       title,
       description,
-      content: description,  // RSS descriptions are often the full content
+      content: bestContent,
       author: author || `${sourceName} Staff`,
       sourceName,
       lean,
@@ -393,6 +407,57 @@ function cleanContent(text) {
   return text.replace(/\[\+\d+ chars\]$/, '').trim();
 }
 
+/** Count words in a string. */
+function wordCount(text) {
+  if (!text) return 0;
+  return text.trim().split(/\s+/).filter(Boolean).length;
+}
+
+/** Attempt to scrape article text from a URL (3s timeout). */
+async function scrapeArticleText(url) {
+  if (!url) return '';
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), 3000);
+  try {
+    const res = await fetch(url, {
+      signal: controller.signal,
+      headers: {
+        'User-Agent': 'Mozilla/5.0 (compatible; ErasureNews/1.0)',
+        'Accept': 'text/html',
+      },
+    });
+    if (!res.ok) return '';
+    const html = await res.text();
+    // Extract text from <article> or <main> or common article body selectors
+    let body = '';
+    const articleMatch = html.match(/<article[^>]*>([\s\S]*?)<\/article>/i);
+    if (articleMatch) {
+      body = articleMatch[1];
+    } else {
+      const mainMatch = html.match(/<main[^>]*>([\s\S]*?)<\/main>/i);
+      if (mainMatch) body = mainMatch[1];
+    }
+    if (!body) {
+      // Try grabbing all <p> tags
+      const pTags = html.match(/<p[^>]*>([\s\S]*?)<\/p>/gi);
+      if (pTags && pTags.length > 3) {
+        body = pTags.join(' ');
+      }
+    }
+    // Strip HTML, collapse whitespace
+    const text = body.replace(/<script[^>]*>[\s\S]*?<\/script>/gi, '')
+      .replace(/<style[^>]*>[\s\S]*?<\/style>/gi, '')
+      .replace(/<[^>]+>/g, ' ')
+      .replace(/\s+/g, ' ')
+      .trim();
+    return text.substring(0, 5000); // Cap at 5000 chars
+  } catch {
+    return '';
+  } finally {
+    clearTimeout(timeout);
+  }
+}
+
 // ── Per-API fetchers (each returns normalized headline array) ──
 
 async function fetchNewsAPI(query, apiKey) {
@@ -413,7 +478,8 @@ async function fetchNewsAPI(query, apiKey) {
     return [];
   }
   console.log(`[NewsAPI] Got ${data.articles.length} articles`);
-  return data.articles.map(a => ({
+  // Map articles, then try scraping short ones in parallel
+  const mapped = data.articles.map(a => ({
     title: a.title,
     description: (a.description || '').trim(),
     content: cleanContent(a.content),
@@ -422,6 +488,24 @@ async function fetchNewsAPI(query, apiKey) {
     publishedAt: a.publishedAt,
     url: a.url,
   }));
+
+  // Attempt to scrape full text for articles under 150 words
+  const scrapePromises = mapped.map(async (article) => {
+    const wc = wordCount(article.content);
+    if (wc < 150 && article.url) {
+      const scraped = await scrapeArticleText(article.url).catch(() => '');
+      const scrapedWc = wordCount(scraped);
+      if (scrapedWc > wc) {
+        console.log(`[NewsAPI] Scraped "${article.title?.substring(0, 40)}" — ${wc} → ${scrapedWc} words`);
+        article.content = scraped;
+      }
+    }
+    const finalWc = wordCount(article.content || article.description);
+    console.log(`[NewsAPI] "${(article.title || '').substring(0, 50)}" — ${finalWc} words`);
+    return article;
+  });
+
+  return Promise.all(scrapePromises);
 }
 
 async function fetchGuardian(query, apiKey) {
@@ -429,7 +513,7 @@ async function fetchGuardian(query, apiKey) {
   const params = new URLSearchParams({
     q: query,
     'api-key': apiKey,
-    'show-fields': 'headline,trailText,byline,body',
+    'show-fields': 'headline,trailText,standfirst,byline,bodyText,body',
     'page-size': '15',
     'order-by': 'newest',
   });
@@ -442,11 +526,22 @@ async function fetchGuardian(query, apiKey) {
   }
   console.log(`[Guardian] Got ${data.response.results.length} results`);
   return data.response.results.map(r => {
-    // Strip HTML tags from body text
-    const rawBody = (r.fields?.body || '').replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim();
+    // Prefer bodyText (plain text), fall back to body (HTML stripped), then standfirst
+    let rawBody = (r.fields?.bodyText || '').trim();
+    if (!rawBody) {
+      rawBody = (r.fields?.body || '').replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim();
+    }
+    const standfirst = (r.fields?.standfirst || '').replace(/<[^>]+>/g, '').trim();
+    const description = r.fields?.trailText || standfirst || '';
+    // Prepend standfirst if body doesn't already include it
+    if (standfirst && rawBody && !rawBody.startsWith(standfirst.substring(0, 40))) {
+      rawBody = standfirst + ' ' + rawBody;
+    }
+    const wc = wordCount(rawBody);
+    console.log(`[Guardian] "${(r.fields?.headline || r.webTitle || '').substring(0, 50)}" — ${wc} words`);
     return {
       title: r.fields?.headline || r.webTitle || 'Untitled',
-      description: r.fields?.trailText || '',
+      description,
       content: rawBody,
       author: r.fields?.byline || 'Guardian Staff',
       sourceName: 'The Guardian',
@@ -473,23 +568,31 @@ async function fetchGNews(query, apiKey) {
     return [];
   }
   console.log(`[GNews] Got ${data.articles.length} articles`);
-  return data.articles.map(a => ({
-    title: a.title,
-    description: a.description || '',
-    content: a.content || '',
-    author: '',
-    sourceName: a.source?.name || 'News',
-    publishedAt: a.publishedAt,
-    url: a.url,
-  }));
+  return data.articles.map(a => {
+    // GNews: prefer content field, fall back to description
+    const content = (a.content || '').trim();
+    const description = (a.description || '').trim();
+    const best = content.length > description.length ? content : description;
+    const wc = wordCount(best);
+    console.log(`[GNews] "${(a.title || '').substring(0, 50)}" — ${wc} words`);
+    return {
+      title: a.title,
+      description,
+      content: best,
+      author: '',
+      sourceName: a.source?.name || 'News',
+      publishedAt: a.publishedAt,
+      url: a.url,
+    };
+  });
 }
 
-/** Classify text quality: 'full' (>500 chars), 'long' (>200), or 'short'. */
+/** Classify text quality based on word count: 'full' (>=150), 'long' (>=80), or 'short'. */
 function textQuality(hl) {
-  const contentLen = (hl.content || '').length;
-  const descLen = (hl.description || '').length;
-  if (contentLen > 500) return 'full';
-  if (contentLen > 200 || descLen > 200) return 'long';
+  const text = hl.content || hl.description || '';
+  const wc = wordCount(text);
+  if (wc >= 150) return 'full';
+  if (wc >= 80) return 'long';
   return 'short';
 }
 
@@ -625,6 +728,19 @@ async function handleMultiApiHeadlines(body) {
     }
     return { ...hl, textQuality: hl.textQuality || textQuality(hl) };
   });
+
+  // Log word counts and filter out articles with fewer than 50 words
+  pool = pool.filter(hl => {
+    const text = hl.content || hl.description || '';
+    const wc = wordCount(text);
+    hl.wordCount = wc;
+    if (wc < 50) {
+      console.log(`[filter] DROPPED (<50 words): "${(hl.title || '').substring(0, 50)}" (${hl.sourceName}) — ${wc} words`);
+      return false;
+    }
+    return true;
+  });
+  console.log(`[multi-api] After 50-word filter: ${pool.length} headlines`);
 
   // Phase 2: Check lean balance — if any lean has < 3 articles, do targeted fetches
   const leanCounts = { left: 0, center: 0, right: 0 };
