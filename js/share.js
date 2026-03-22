@@ -20,16 +20,9 @@ export function getEditionString() {
   return `Vol. ${editionVolume}`;
 }
 
-/** Set the edition after a successful counter increment. */
-export function setEdition(vol, num) {
-  editionVolume = vol;
-  editionNumber = num;
-}
-
 /** Reset session flag (called on Start Over). */
 export function resetEdition() {
   sessionCounted = false;
-  editionNumber = null;
   updateNameplate();
 }
 
@@ -39,10 +32,23 @@ function updateNameplate() {
   if (el) el.textContent = getEditionString();
 }
 
-// Set initial nameplate on load
-updateNameplate();
+/** Fetch the current counter on page load (GET — does not increment). */
+async function fetchCurrentCount() {
+  try {
+    const res = await fetch('/api/increment-counter');
+    const data = await res.json();
+    if (data.volume) editionVolume = data.volume;
+    if (data.number) editionNumber = data.number;
+  } catch (err) {
+    console.error('[edition] Failed to fetch counter:', err.message);
+  }
+  updateNameplate();
+}
 
-/** Increment the global counter (once per session). Returns {volume, number} or null. */
+// Fetch count on load — silently, never blocks
+fetchCurrentCount();
+
+/** Increment the global counter (POST — once per session). */
 async function incrementCounter() {
   if (sessionCounted) return { volume: editionVolume, number: editionNumber };
 
@@ -54,16 +60,13 @@ async function incrementCounter() {
     });
     const data = await res.json();
     sessionCounted = true;
-    if (data.number) {
-      editionVolume = data.volume;
-      editionNumber = data.number;
-    }
+    if (data.volume) editionVolume = data.volume;
+    if (data.number) editionNumber = data.number;
     updateNameplate();
     return data;
   } catch (err) {
-    console.error('[edition] Counter failed:', err.message);
+    console.error('[edition] Counter increment failed:', err.message);
     sessionCounted = true; // Don't retry on failure
-    updateNameplate();
     return null;
   }
 }
@@ -81,11 +84,12 @@ function getPoemTitle() {
 function shareString() {
   const { layers } = getState();
   const sources = layers.map(l => l.short).join('/');
+  const edition = getEditionString();
   const title = getPoemTitle();
   if (title) {
-    return `"${title}" \u2014 erasure from ${sources} \u00b7 ${dateShort} \u00b7 #ErasureNews #erasurepoetry`;
+    return `${edition} \u2014 "${title}" \u2014 erasure from ${sources} \u00b7 ${dateShort} \u00b7 #ErasureNews #erasurepoetry`;
   }
-  return `${getEditionString()} \u2014 erasure from ${sources} \u00b7 ${dateShort} \u00b7 Is it news or poetry? You decide! #ErasureNews #erasurepoetry`;
+  return `${edition} \u2014 erasure from ${sources} \u00b7 ${dateShort} \u00b7 Is it news or poetry? You decide! #ErasureNews #erasurepoetry`;
 }
 
 export async function openShare() {
@@ -532,6 +536,7 @@ export function downloadPoemText() {
     alert('Write or circle some words first.');
     return;
   }
+  ensureCounted(); // fire-and-forget
   const blob = new Blob([poem], { type: 'text/plain' });
   const a = document.createElement('a');
   a.download = `erasure-poem-${Date.now()}.txt`;
