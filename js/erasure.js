@@ -151,8 +151,9 @@ export function undoLast() {
   updatePoem();
 }
 
-/** Attach mouse/pointer event delegation on the article wrapper. */
+/** Attach mouse and touch event delegation on the article wrapper. */
 export function attachInteraction(wrapper) {
+  // ── Mouse events ──
   wrapper.addEventListener('mousedown', e => {
     const span = e.target.closest('.w');
     if (!span) return;
@@ -173,4 +174,46 @@ export function attachInteraction(wrapper) {
     dragging = false;
     dragMode = null;
   });
+
+  // ── Touch events ──
+  // Only intercept scrolling when touch starts directly on a word span.
+  let touchStartedOnWord = false;
+  let lastTouchSpan = null;
+
+  wrapper.addEventListener('touchstart', e => {
+    const touch = e.touches[0];
+    const el = document.elementFromPoint(touch.clientX, touch.clientY);
+    const span = el?.closest('.w');
+    if (!span) {
+      touchStartedOnWord = false;
+      return; // Let normal scrolling happen
+    }
+    touchStartedOnWord = true;
+    dragging = true;
+    dragMode = 'erase';
+    lastTouchSpan = span;
+    act(span, dragMode);
+    e.preventDefault(); // Prevent scroll only when starting on a word
+  }, { passive: false });
+
+  wrapper.addEventListener('touchmove', e => {
+    if (!touchStartedOnWord || !dragging || !dragMode) return;
+    const touch = e.touches[0];
+    const el = document.elementFromPoint(touch.clientX, touch.clientY);
+    const span = el?.closest('.w');
+    if (span && span !== lastTouchSpan) {
+      lastTouchSpan = span;
+      act(span, dragMode);
+    }
+    e.preventDefault(); // Prevent scroll during word-drag
+  }, { passive: false });
+
+  const endTouch = () => {
+    touchStartedOnWord = false;
+    lastTouchSpan = null;
+    dragging = false;
+    dragMode = null;
+  };
+  wrapper.addEventListener('touchend', endTouch);
+  wrapper.addEventListener('touchcancel', endTouch);
 }

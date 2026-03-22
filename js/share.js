@@ -188,7 +188,7 @@ function renderCard(poem) {
   ctx.fillRect(40, H - 32, W - 80, 1);
   ctx.fillStyle = '#aaa49a';
   ctx.font = '9px "Courier New", monospace';
-  ctx.fillText('Is it news or poetry? Nobody can say!  \u00b7  erasurenews.com', W / 2, H - 18);
+  ctx.fillText('Is it news or poetry? You decide!  \u00b7  erasurenews.com', W / 2, H - 18);
 
   // Film grain
   const id = ctx.getImageData(0, 0, W, H);
