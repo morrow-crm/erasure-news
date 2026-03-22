@@ -151,11 +151,31 @@ function act(span, mode) {
   }
 }
 
-/** Undo the last erase/keep action. */
+/** Undo the last erase/keep action (supports batch entries from Burroughs). */
 export function undoLast() {
   if (getTheme() === 'dostoevsky') return; // No undoing fate
   if (!undoStack.length) return;
-  const { key, prev } = undoStack.pop();
+  const entry = undoStack.pop();
+
+  // Batch undo (Burroughs techniques)
+  if (entry.batch) {
+    for (const { key, prev } of entry.batch) {
+      const [li, wi] = key.split('-').map(Number);
+      const layerEl = document.getElementById(`al-${li}`);
+      const span = [...layerEl.querySelectorAll('.w')].find(s => parseInt(s.dataset.wi) === wi);
+      if (!span) continue;
+      wState[key] = prev;
+      span.classList.remove('erased', 'kept', 'dosto-gone', 'dosto-disintegrating');
+      span.style.visibility = '';
+      if (prev === 'erased') span.classList.add('erased');
+      else if (prev === 'kept') span.classList.add('kept');
+    }
+    updatePoem();
+    return;
+  }
+
+  // Single undo
+  const { key, prev } = entry;
   const [li, wi] = key.split('-').map(Number);
   const layerEl = document.getElementById(`al-${li}`);
   const span = [...layerEl.querySelectorAll('.w')].find(s => parseInt(s.dataset.wi) === wi);

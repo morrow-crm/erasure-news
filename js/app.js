@@ -13,6 +13,7 @@ import { openShare, closeShare, shareToX, shareToMastodon, copyText, downloadCar
 import { initThemeSelector, applyTheme, clearTheme, setTheme, resetThemeSelector } from './theme.js';
 import { spawnButterflies, destroyButterflies } from './butterfly.js';
 import { initDostoevsky, destroyDostoevsky } from './dostoevsky.js';
+import { fireBurroughs } from './burroughs.js';
 
 // ── Dates ──
 const now = new Date();
@@ -221,15 +222,18 @@ document.getElementById('fmt-clear').addEventListener('click', () => {
   document.execCommand('removeFormat');
 });
 
-// ── Burroughs button (placeholder) ──
-document.getElementById('burroughs-btn').addEventListener('click', () => {
+// ── Burroughs button ──
+document.getElementById('burroughs-btn').addEventListener('click', async () => {
   const btn = document.getElementById('burroughs-btn');
   if (btn.classList.contains('burroughs-cooldown')) return;
-  console.log('Burroughs fired');
-  btn.classList.add('burroughs-flash');
-  setTimeout(() => btn.classList.remove('burroughs-flash'), 150);
   btn.classList.add('burroughs-cooldown');
-  setTimeout(() => btn.classList.remove('burroughs-cooldown'), 1000);
+  const didFire = await fireBurroughs();
+  if (!didFire) {
+    // Nothing to erase — brief flash only
+    btn.classList.add('burroughs-flash');
+    setTimeout(() => btn.classList.remove('burroughs-flash'), 150);
+  }
+  btn.classList.remove('burroughs-cooldown');
 });
 
 // ── Share modal buttons ──
