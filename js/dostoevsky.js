@@ -1,6 +1,7 @@
 /**
- * Dostoevsky theme effects — fire/ash erasure, fascism word transformation,
- * crow animation, rain, text flicker, red string conspiracy lines.
+ * Dostoevsky theme effects — disintegration erasure, fascism word transformation,
+ * detailed crow animation (flight, landing, hopping, pecking), rain, text flicker,
+ * red string conspiracy lines, fragile-word dread pulse.
  *
  * All effects are scoped to the Dostoevsky theme and cleaned up on destroy.
  */
@@ -24,99 +25,157 @@ let crowTimer = null;
 let crowEl = null;
 let redCanvas = null;
 let redCtx = null;
-let keptWordPositions = [];  // for red string lines
-let burnCount = 0;
+let keptWordPositions = [];
+let destroyCount = 0;
 let fascismSpans = new Set();
+let dreadTimer = null;
 
 function pick(arr) { return arr[Math.floor(Math.random() * arr.length)]; }
 function rand(lo, hi) { return lo + Math.random() * (hi - lo); }
 function isMobile() { return window.matchMedia('(pointer: coarse)').matches; }
+function isTablet() { return window.innerWidth <= 768 && window.innerWidth > 600; }
 
 // ══════════════════════════════════════════════════════════════
-//  FIRE & ASH WORD ERASURE
+//  DETAILED CROW SVG
+// ══════════════════════════════════════════════════════════════
+
+function createCrowSVG() {
+  const mobile = isMobile();
+  const tablet = isTablet();
+  const w = mobile ? 45 : tablet ? 60 : 90;
+  const h = mobile ? 35 : tablet ? 45 : 65;
+  const el = document.createElement('div');
+  el.className = 'dosto-crow';
+  el.style.width = `${w}px`;
+  el.style.height = `${h}px`;
+  el.innerHTML = `
+    <svg class="crow-svg" viewBox="0 0 90 65" width="${w}" height="${h}">
+      <defs>
+        <linearGradient id="crow-iridescent" x1="0" y1="0" x2="1" y2="1">
+          <stop offset="0%" stop-color="#0a0a12"/>
+          <stop offset="40%" stop-color="#141428"/>
+          <stop offset="60%" stop-color="#1a1a2e"/>
+          <stop offset="100%" stop-color="#0e0e1a"/>
+        </linearGradient>
+        <linearGradient id="crow-wing-sheen" x1="0" y1="0" x2="0.8" y2="1">
+          <stop offset="0%" stop-color="#12121e"/>
+          <stop offset="50%" stop-color="#1e1e36"/>
+          <stop offset="100%" stop-color="#2a2a3a"/>
+        </linearGradient>
+      </defs>
+      <g class="crow-body-main">
+        <!-- Shadow on ground (visible during flight) -->
+        <ellipse class="crow-shadow" cx="45" cy="62" rx="20" ry="4" fill="rgba(0,0,0,0.3)" opacity="0"/>
+        <!-- Tail fan -->
+        <path d="M18,40 Q6,36 2,28" stroke="#0a0a12" stroke-width="3.5" fill="none"/>
+        <path d="M18,42 Q5,40 1,34" stroke="#0e0e1a" stroke-width="3" fill="none"/>
+        <path d="M18,44 Q7,46 2,40" stroke="#0a0a12" stroke-width="2.5" fill="none"/>
+        <path d="M20,43 Q10,48 4,45" stroke="#0e0e1a" stroke-width="2" fill="none"/>
+        <!-- Body -->
+        <ellipse cx="42" cy="38" rx="18" ry="12" fill="url(#crow-iridescent)"/>
+        <!-- Belly highlight -->
+        <ellipse cx="44" cy="42" rx="10" ry="6" fill="#101018" opacity="0.5"/>
+        <!-- Wing group (animated) -->
+        <g class="crow-wing-group">
+          <!-- Lower wing feathers (layered) -->
+          <path d="M28,30 Q36,18 56,26 Q50,30 28,40Z" fill="url(#crow-wing-sheen)"/>
+          <!-- Mid feathers -->
+          <path d="M30,32 Q38,22 54,28 Q48,32 30,38Z" fill="#141428" opacity="0.7"/>
+          <!-- Upper feather highlights -->
+          <path d="M32,33 Q40,26 52,30" stroke="#2a2a3a" stroke-width="0.8" fill="none" opacity="0.5"/>
+          <path d="M34,35 Q42,28 50,32" stroke="#2a2a3a" stroke-width="0.6" fill="none" opacity="0.4"/>
+          <!-- Wing edge highlight (blue tint) -->
+          <path d="M28,30 Q36,18 56,26" stroke="#2a2a3a" stroke-width="1.2" fill="none" opacity="0.6"/>
+        </g>
+        <!-- Legs -->
+        <line x1="38" y1="49" x2="36" y2="58" stroke="#1a1a2a" stroke-width="1.4"/>
+        <line x1="47" y1="49" x2="49" y2="58" stroke="#1a1a2a" stroke-width="1.4"/>
+        <!-- Feet -->
+        <path d="M33,58 L36,58 L38,57" stroke="#1a1a2a" stroke-width="1" fill="none"/>
+        <path d="M47,57 L49,58 L52,58" stroke="#1a1a2a" stroke-width="1" fill="none"/>
+        <path d="M34,59 L36,58" stroke="#1a1a2a" stroke-width="0.8" fill="none"/>
+        <path d="M49,58 L51,59" stroke="#1a1a2a" stroke-width="0.8" fill="none"/>
+      </g>
+      <!-- Head group (animated for pecking/watching) -->
+      <g class="crow-head-group">
+        <!-- Neck -->
+        <ellipse cx="58" cy="30" rx="5" ry="7" fill="#0e0e1a"/>
+        <!-- Head -->
+        <circle cx="64" cy="24" r="9" fill="url(#crow-iridescent)"/>
+        <!-- Head iridescent sheen -->
+        <circle cx="62" cy="22" r="6" fill="#141428" opacity="0.4"/>
+        <!-- Beak — large, sharp, slightly hooked -->
+        <path class="crow-beak" d="M73,22 L84,25 L82,26 L73,25Z" fill="#1e1e28"/>
+        <path d="M73,24 L82,26 L80,27 L73,26Z" fill="#16161e"/>
+        <!-- Beak hook -->
+        <path d="M82,25 Q84,26 82,27" stroke="#1a1a24" stroke-width="0.8" fill="none"/>
+        <!-- Eye — bright pale yellow -->
+        <circle cx="67" cy="22" r="2.2" fill="#f0e060"/>
+        <circle cx="67.3" cy="21.8" r="1" fill="#0a0a0a"/>
+        <!-- Eye highlight -->
+        <circle cx="67.8" cy="21.3" r="0.5" fill="#fff" opacity="0.6"/>
+      </g>
+    </svg>`;
+  el.style.position = 'fixed';
+  el.style.zIndex = '150';
+  el.style.pointerEvents = 'none';
+  return el;
+}
+
+// ══════════════════════════════════════════════════════════════
+//  DISINTEGRATION WORD ERASURE
 // ══════════════════════════════════════════════════════════════
 
 /**
- * Play the fire-and-ash burn sequence on a word span.
- * Returns a Promise that resolves when the burn is complete.
+ * Disintegrate a word into 15-20 scattering particles.
+ * The word collapses to nothing (no black bar, no ash).
+ * Returns a Promise that resolves when complete.
  */
-export function burnWord(span) {
+export function disintegrateWord(span) {
   return new Promise(resolve => {
+    if (destroyed) { resolve(); return; }
+    span.classList.add('dosto-disintegrating');
+
+    const rect = span.getBoundingClientRect();
+    const cx = rect.left + rect.width / 2;
+    const cy = rect.top + rect.height / 2;
+    const text = span.textContent;
+    const count = Math.min(20, Math.max(15, text.length * 2));
     const isFascism = fascismSpans.has(span);
-    const duration = isFascism ? 800 : 1200;
-    span.classList.add('dosto-burning');
 
-    // Phase 1: flames (0 – 60% of duration)
-    // Phase 2: char and darken (40% – 80%)
-    // Phase 3: ash bar (80% – 100%)
-    const start = performance.now();
-
-    function animateBurn(now) {
-      if (destroyed) { resolve(); return; }
-      const t = Math.min((now - start) / duration, 1);
-
-      if (t < 0.6) {
-        // Flame phase — cycle yellow → orange → red
-        const flameT = t / 0.6;
-        const r = Math.round(255 - flameT * 100);
-        const g = Math.round(200 * (1 - flameT * 0.8));
-        const b = Math.round(50 * (1 - flameT));
-        span.style.color = `rgb(${r},${g},${b})`;
-        span.style.textShadow = `0 ${-2 - flameT * 4}px ${4 + flameT * 6}px rgba(255,${Math.round(120 * (1 - flameT))},0,${0.8 - flameT * 0.3})`;
-        // Slight jitter
-        span.style.transform = `translateY(${Math.sin(now * 0.03) * 1.5}px)`;
-      } else if (t < 0.8) {
-        // Charring — go dark
-        const charT = (t - 0.6) / 0.2;
-        const v = Math.round(60 * (1 - charT));
-        span.style.color = `rgb(${80 + v},${v},${v})`;
-        span.style.textShadow = `0 0 ${3 * (1 - charT)}px rgba(200,50,0,${0.3 * (1 - charT)})`;
-        span.style.transform = '';
-      } else {
-        // Final ash state
-        span.style.color = '';
-        span.style.textShadow = '';
-        span.style.transform = '';
-      }
-
-      if (t < 1) {
-        requestAnimationFrame(animateBurn);
-      } else {
-        span.classList.remove('dosto-burning');
-        span.classList.add('dosto-ash');
-        // Emit falling ash particles
-        emitAsh(span);
-        burnCount++;
-        // 1 in 5 chance: ash transforms a nearby word
-        if (burnCount % 5 === 0) {
-          setTimeout(() => {
-            if (!destroyed) transformNearbyWord(span);
-          }, 600);
-        }
-        resolve();
-      }
+    // Emit particles
+    for (let i = 0; i < count; i++) {
+      const p = document.createElement('div');
+      p.className = 'dosto-particle';
+      const baseColor = isFascism ? `rgb(${120 + Math.random()*40},${Math.random()*20},${Math.random()*20})` : `rgb(${160 + Math.random()*60},${165 + Math.random()*60},${180 + Math.random()*50})`;
+      p.style.background = baseColor;
+      p.style.left = `${cx + rand(-rect.width / 2, rect.width / 2)}px`;
+      p.style.top = `${cy + rand(-rect.height / 2, rect.height / 2)}px`;
+      p.style.setProperty('--dx', `${rand(-40, 40)}px`);
+      p.style.setProperty('--dy', `${rand(-35, 25)}px`);
+      p.style.setProperty('--rot', `${rand(-180, 180)}deg`);
+      p.style.animationDelay = `${i * 0.03}s`;
+      p.style.width = `${rand(2, 5)}px`;
+      p.style.height = `${rand(2, 5)}px`;
+      document.body.appendChild(p);
+      p.addEventListener('animationend', () => p.remove());
     }
-    requestAnimationFrame(animateBurn);
-  });
-}
 
-/** Emit 6-8 grey ash particles drifting downward. */
-function emitAsh(span) {
-  const rect = span.getBoundingClientRect();
-  const cx = rect.left + rect.width / 2;
-  const cy = rect.top + rect.height / 2;
-  const count = 6 + Math.floor(Math.random() * 3);
-  for (let i = 0; i < count; i++) {
-    const dot = document.createElement('div');
-    dot.className = 'dosto-ash-particle';
-    dot.style.left = `${cx + rand(-rect.width / 2, rect.width / 2)}px`;
-    dot.style.top = `${cy}px`;
-    dot.style.setProperty('--drift-x', `${rand(-15, 15)}px`);
-    dot.style.setProperty('--fall-dist', `${rand(30, 60)}px`);
-    dot.style.animationDelay = `${i * 0.08}s`;
-    document.body.appendChild(dot);
-    dot.addEventListener('animationend', () => dot.remove());
-  }
+    // Collapse the word to nothing after a brief delay
+    setTimeout(() => {
+      if (destroyed) { resolve(); return; }
+      span.classList.remove('dosto-disintegrating');
+      span.classList.add('dosto-gone');
+      destroyCount++;
+      // 1 in 5: corrupt a nearby word
+      if (destroyCount % 5 === 0) {
+        setTimeout(() => {
+          if (!destroyed) transformNearbyWord(span);
+        }, 600);
+      }
+      resolve();
+    }, 350);
+  });
 }
 
 /** Transform a nearby un-erased word into a fascism word. */
@@ -128,7 +187,6 @@ function transformNearbyWord(sourceSpan) {
   const srcX = sourceRect.left + sourceRect.width / 2;
   const srcY = sourceRect.top + sourceRect.height / 2;
 
-  // Find nearby un-erased, un-transformed words
   const candidates = [...wrapper.querySelectorAll('.w')].filter(s => {
     const key = `${s.dataset.li}-${s.dataset.wi}`;
     if (wState[key] === 'erased') return false;
@@ -137,11 +195,10 @@ function transformNearbyWord(sourceSpan) {
     const r = s.getBoundingClientRect();
     if (r.width === 0) return false;
     const d = Math.hypot(r.left + r.width / 2 - srcX, r.top + r.height / 2 - srcY);
-    return d < 300; // within 300px
+    return d < 300;
   });
   if (!candidates.length) return;
 
-  // Pick closest
   candidates.sort((a, b) => {
     const ra = a.getBoundingClientRect();
     const rb = b.getBoundingClientRect();
@@ -149,9 +206,8 @@ function transformNearbyWord(sourceSpan) {
     const db = Math.hypot(rb.left + rb.width / 2 - srcX, rb.top + rb.height / 2 - srcY);
     return da - db;
   });
-  const target = candidates[Math.min(2, candidates.length - 1)]; // not the very closest, slightly random
+  const target = candidates[Math.min(2, candidates.length - 1)];
 
-  // Brief blood-red glow then transform
   target.dataset.originalWord = target.textContent;
   target.classList.add('dosto-fascism-glow');
   setTimeout(() => {
@@ -182,52 +238,11 @@ export function getFascismWordsInPoem() {
 }
 
 // ══════════════════════════════════════════════════════════════
-//  THE CROW
+//  THE CROW — slow flight, landing, hopping, multi-word pecking
 // ══════════════════════════════════════════════════════════════
-
-function createCrowSVG() {
-  const mobile = isMobile();
-  const w = mobile ? 40 : 60;
-  const h = mobile ? 30 : 45;
-  const el = document.createElement('div');
-  el.className = 'dosto-crow';
-  el.style.width = `${w}px`;
-  el.style.height = `${h}px`;
-  el.innerHTML = `
-    <svg class="crow-svg" viewBox="0 0 60 45" width="${w}" height="${h}">
-      <g class="crow-body-group">
-        <!-- body -->
-        <ellipse cx="30" cy="28" rx="14" ry="10" fill="#0a0a0a"/>
-        <!-- head -->
-        <circle cx="44" cy="20" r="7" fill="#0e0e0e"/>
-        <!-- beak -->
-        <polygon class="crow-beak" points="51,19 58,21 51,22" fill="#2a2a2a"/>
-        <!-- eye -->
-        <circle cx="46" cy="19" r="1.5" fill="#444"/>
-        <circle cx="46.3" cy="18.8" r="0.6" fill="#888"/>
-        <!-- tail feathers -->
-        <path d="M16,28 Q8,26 5,22" stroke="#0a0a0a" stroke-width="3" fill="none"/>
-        <path d="M16,30 Q7,30 3,27" stroke="#0a0a0a" stroke-width="2.5" fill="none"/>
-        <path d="M16,32 Q9,34 4,32" stroke="#0a0a0a" stroke-width="2" fill="none"/>
-        <!-- wing (folded) -->
-        <path class="crow-wing" d="M22,20 Q30,12 42,18 Q36,22 22,28Z" fill="#121212"/>
-        <!-- legs -->
-        <line x1="26" y1="37" x2="24" y2="43" stroke="#1a1a1a" stroke-width="1.2"/>
-        <line x1="33" y1="37" x2="35" y2="43" stroke="#1a1a1a" stroke-width="1.2"/>
-        <!-- feet -->
-        <path d="M22,43 L24,43 L26,42" stroke="#1a1a1a" stroke-width="0.8" fill="none"/>
-        <path d="M33,42 L35,43 L37,43" stroke="#1a1a1a" stroke-width="0.8" fill="none"/>
-      </g>
-    </svg>`;
-  el.style.position = 'fixed';
-  el.style.zIndex = '150';
-  el.style.pointerEvents = 'none';
-  return el;
-}
 
 function scheduleCrow() {
   if (destroyed) return;
-  // First appearance at 15s, then every 45-90s
   const delay = crowEl ? rand(45000, 90000) : 15000;
   crowTimer = setTimeout(() => {
     if (destroyed) return;
@@ -235,17 +250,19 @@ function scheduleCrow() {
   }, delay);
 }
 
-function doCrowVisit() {
-  if (destroyed) return;
-
-  // Find a target word
+function getUnErasedWords() {
   const wrapper = document.getElementById('article-wrapper');
-  if (!wrapper) { scheduleCrow(); return; }
+  if (!wrapper) return [];
   const { wState } = getState();
-  const words = [...wrapper.querySelectorAll('.w')].filter(s => {
+  return [...wrapper.querySelectorAll('.w')].filter(s => {
     const key = `${s.dataset.li}-${s.dataset.wi}`;
     return wState[key] !== 'erased' && s.getBoundingClientRect().width > 0;
   });
+}
+
+function doCrowVisit() {
+  if (destroyed) return;
+  const words = getUnErasedWords();
   if (!words.length) { scheduleCrow(); return; }
   const target = pick(words);
   const tRect = target.getBoundingClientRect();
@@ -256,35 +273,43 @@ function doCrowVisit() {
   }
 
   const vw = window.innerWidth;
-  const crowW = isMobile() ? 40 : 60;
-  const crowH = isMobile() ? 30 : 45;
+  const mobile = isMobile();
+  const tablet = isTablet();
+  const crowW = mobile ? 45 : tablet ? 60 : 90;
+  const crowH = mobile ? 35 : tablet ? 45 : 65;
 
-  // Start from right edge
-  const startX = vw + 20;
-  const startY = rand(50, 150);
+  // Enter from right or left randomly
+  const fromRight = Math.random() > 0.5;
+  const startX = fromRight ? vw + 30 : -crowW - 30;
+  const startY = rand(40, 120);
   const endX = tRect.left + tRect.width / 2 - crowW / 2;
-  const endY = tRect.top - crowH + 5;
+  const endY = tRect.top - crowH + 8;
 
   crowEl.style.left = `${startX}px`;
   crowEl.style.top = `${startY}px`;
   crowEl.style.opacity = '1';
   crowEl.style.display = '';
-  // Face left (flying in from right)
-  crowEl.style.transform = 'scaleX(-1)';
+  // Face the direction of travel
+  crowEl.style.transform = fromRight ? 'scaleX(-1)' : 'scaleX(1)';
 
-  // Animate wing during flight
-  const wing = crowEl.querySelector('.crow-wing');
-  if (wing) wing.classList.add('crow-flying');
+  // Show shadow during flight
+  const shadow = crowEl.querySelector('.crow-shadow');
+  if (shadow) shadow.style.opacity = '0.3';
 
-  // Flight: gentle arc from right to target word
-  const flightDur = 2500;
+  // Start wing flapping
+  const wingGroup = crowEl.querySelector('.crow-wing-group');
+  if (wingGroup) wingGroup.classList.add('crow-flying');
+
+  // Slow flight: 4-6 seconds
+  const flightDur = rand(4000, 6000);
   const flightStart = performance.now();
-  const arcPeakY = Math.min(startY, endY) - rand(40, 80);
+  const arcPeakY = Math.min(startY, endY) - rand(50, 100);
 
   function animateFlight(now) {
     if (destroyed) return;
     const t = Math.min((now - flightStart) / flightDur, 1);
-    const e = t; // linear for steady flight
+    // Ease-in-out for natural deceleration on approach
+    const e = t < 0.5 ? 2 * t * t : 1 - Math.pow(-2 * t + 2, 2) / 2;
     const cpX = (startX + endX) / 2;
     const cpY = arcPeakY;
     const x = (1 - e) ** 2 * startX + 2 * (1 - e) * e * cpX + e * e * endX;
@@ -292,49 +317,132 @@ function doCrowVisit() {
     crowEl.style.left = `${x}px`;
     crowEl.style.top = `${y}px`;
 
+    // Fade shadow as crow descends
+    if (shadow) {
+      const groundDist = Math.max(0, 1 - t);
+      shadow.style.opacity = `${0.15 + groundDist * 0.15}`;
+    }
+
     if (t < 1) requestAnimationFrame(animateFlight);
-    else crowLand(target);
+    else crowLand(target, fromRight);
   }
   requestAnimationFrame(animateFlight);
 }
 
-function crowLand(target) {
+function crowLand(target, fromRight) {
   if (destroyed) return;
-  const wing = crowEl.querySelector('.crow-wing');
-  if (wing) wing.classList.remove('crow-flying');
+  const wingGroup = crowEl.querySelector('.crow-wing-group');
+  if (wingGroup) wingGroup.classList.remove('crow-flying');
+  const shadow = crowEl.querySelector('.crow-shadow');
+  if (shadow) shadow.style.opacity = '0';
 
-  // Landing: brief wing spread
+  // Landing wing flare
   crowEl.classList.add('crow-landing');
   setTimeout(() => {
     if (destroyed) return;
     crowEl.classList.remove('crow-landing');
-    // Peck sequence
-    crowPeck(target, 0);
-  }, 400);
+    // Cock head (observe surroundings)
+    crowEl.classList.add(fromRight ? 'crow-watching' : 'crow-watching-right');
+    setTimeout(() => {
+      if (destroyed) return;
+      crowEl.classList.remove('crow-watching', 'crow-watching-right');
+      // Begin hopping + pecking sequence
+      crowHopAndPeck(target, 0);
+    }, rand(600, 1000));
+  }, 500);
 }
 
-function crowPeck(target, count) {
+function crowHopAndPeck(currentTarget, hopCount) {
   if (destroyed) return;
-  const totalPecks = 4 + Math.floor(Math.random() * 3); // 4-6
-  if (count >= totalPecks) {
-    // After final peck, burn the word
-    crowWatchBurn(target);
+  const maxHops = 1 + Math.floor(Math.random() * 3); // 1-3 hops
+  if (hopCount >= maxHops) {
+    // Done pecking, watch then fly away
+    crowWatchAndLeave();
     return;
   }
 
-  const beak = crowEl.querySelector('.crow-beak');
-  crowEl.classList.add('crow-pecking');
-  // Word shudder
-  target.style.transform = `translateX(${Math.random() > 0.5 ? 2 : -2}px)`;
-  // Tiny spark
-  emitSpark(target);
+  // Hop to the target
+  if (hopCount > 0) {
+    // Find next adjacent word to hop to
+    const words = getUnErasedWords();
+    const currentRect = currentTarget.getBoundingClientRect();
+    const nearWords = words.filter(w => {
+      if (w === currentTarget) return false;
+      const r = w.getBoundingClientRect();
+      const dist = Math.abs(r.left - currentRect.right);
+      return dist < 150 && Math.abs(r.top - currentRect.top) < 30;
+    });
+    if (nearWords.length) {
+      currentTarget = pick(nearWords);
+      const tRect = currentTarget.getBoundingClientRect();
+      const crowW = parseFloat(crowEl.style.width) || 90;
+      const crowH = parseFloat(crowEl.style.height) || 65;
+      const newX = tRect.left + tRect.width / 2 - crowW / 2;
+      const newY = tRect.top - crowH + 8;
 
-  setTimeout(() => {
+      // Animate hop
+      crowEl.classList.add('crow-hopping');
+      const startX = parseFloat(crowEl.style.left);
+      const startY = parseFloat(crowEl.style.top);
+      const hopDur = 300;
+      const hopStart = performance.now();
+      function animateHop(now) {
+        if (destroyed) return;
+        const t = Math.min((now - hopStart) / hopDur, 1);
+        const e = t < 0.5 ? 2 * t * t : 1 - Math.pow(-2 * t + 2, 2) / 2;
+        crowEl.style.left = `${startX + (newX - startX) * e}px`;
+        crowEl.style.top = `${startY + (newY - startY) * e - Math.sin(t * Math.PI) * 12}px`;
+        if (t < 1) requestAnimationFrame(animateHop);
+        else {
+          crowEl.classList.remove('crow-hopping');
+          doPeckSequence(currentTarget, hopCount, maxHops);
+        }
+      }
+      requestAnimationFrame(animateHop);
+      return;
+    }
+  }
+
+  doPeckSequence(currentTarget, hopCount, maxHops);
+}
+
+function doPeckSequence(target, hopCount, maxHops) {
+  if (destroyed) return;
+  // Peck 2-4 times
+  const totalPecks = 2 + Math.floor(Math.random() * 3);
+  let peckCount = 0;
+
+  function doPeck() {
     if (destroyed) return;
-    crowEl.classList.remove('crow-pecking');
-    target.style.transform = '';
-    setTimeout(() => crowPeck(target, count + 1), rand(200, 400));
-  }, 150);
+    if (peckCount >= totalPecks) {
+      // Cock head after pecking (observing damage)
+      const dir = Math.random() > 0.5 ? 'crow-watching' : 'crow-watching-right';
+      crowEl.classList.add(dir);
+      setTimeout(() => {
+        if (destroyed) return;
+        crowEl.classList.remove(dir);
+        // Disintegrate the word
+        crowDisintegrateWord(target, () => {
+          crowHopAndPeck(target, hopCount + 1);
+        });
+      }, rand(400, 700));
+      return;
+    }
+
+    crowEl.classList.add('crow-pecking');
+    // Word shudder
+    target.style.transform = `translateX(${Math.random() > 0.5 ? 2 : -2}px)`;
+    emitSpark(target);
+    peckCount++;
+
+    setTimeout(() => {
+      if (destroyed) return;
+      crowEl.classList.remove('crow-pecking');
+      target.style.transform = '';
+      setTimeout(doPeck, rand(150, 300));
+    }, 120);
+  }
+  doPeck();
 }
 
 function emitSpark(span) {
@@ -349,41 +457,46 @@ function emitSpark(span) {
   dot.addEventListener('animationend', () => dot.remove());
 }
 
-function crowWatchBurn(target) {
+function crowDisintegrateWord(target, callback) {
   if (destroyed) return;
-  // Tilt head (observing)
-  crowEl.classList.add('crow-watching');
-
-  // Trigger the burn
   const { wState } = getState();
   const key = `${target.dataset.li}-${target.dataset.wi}`;
-  // Mark as erased in state
+  if (wState[key] === 'erased') { callback(); return; }
+
   wState[key] = 'erased';
   target.classList.add('erased');
-  burnWord(target).then(() => {
+  disintegrateWord(target).then(() => {
     updatePoem();
+    onWordAction();
+    callback();
   });
+}
 
-  // Watch for a moment then fly away
+function crowWatchAndLeave() {
+  if (destroyed) return;
+  // One last head tilt
+  crowEl.classList.add('crow-watching');
   setTimeout(() => {
     if (destroyed) return;
     crowEl.classList.remove('crow-watching');
     crowFlyAway();
-  }, 1800);
+  }, rand(800, 1500));
 }
 
 function crowFlyAway() {
   if (destroyed) return;
-  // Face left, fly up and off to the left
-  crowEl.style.transform = 'scaleX(1)';
-  const wing = crowEl.querySelector('.crow-wing');
-  if (wing) wing.classList.add('crow-flying');
+  const flyLeft = Math.random() > 0.5;
+  crowEl.style.transform = flyLeft ? 'scaleX(1)' : 'scaleX(-1)';
+  const wingGroup = crowEl.querySelector('.crow-wing-group');
+  if (wingGroup) wingGroup.classList.add('crow-flying');
+  const shadow = crowEl.querySelector('.crow-shadow');
+  if (shadow) shadow.style.opacity = '0.2';
 
   const startX = parseFloat(crowEl.style.left);
   const startY = parseFloat(crowEl.style.top);
-  const endX = -80;
-  const endY = -60;
-  const flightDur = 3000;
+  const endX = flyLeft ? -120 : window.innerWidth + 120;
+  const endY = rand(-80, -30);
+  const flightDur = rand(3000, 4500);
   const flightStart = performance.now();
 
   function animateExit(now) {
@@ -394,11 +507,13 @@ function crowFlyAway() {
     const y = startY + (endY - startY) * e;
     crowEl.style.left = `${x}px`;
     crowEl.style.top = `${y}px`;
+    if (shadow) shadow.style.opacity = `${0.2 * (1 - t)}`;
 
     if (t < 1) requestAnimationFrame(animateExit);
     else {
       crowEl.style.display = 'none';
-      if (wing) wing.classList.remove('crow-flying');
+      if (wingGroup) wingGroup.classList.remove('crow-flying');
+      if (shadow) shadow.style.opacity = '0';
       scheduleCrow();
     }
   }
@@ -406,18 +521,35 @@ function crowFlyAway() {
 }
 
 // ══════════════════════════════════════════════════════════════
+//  FRAGILE WORD DREAD PULSE
+// ══════════════════════════════════════════════════════════════
+
+function startDreadPulse() {
+  function doPulse() {
+    if (destroyed) return;
+    const words = getUnErasedWords();
+    if (words.length) {
+      const w = pick(words);
+      w.classList.add('dosto-dread');
+      w.addEventListener('animationend', () => w.classList.remove('dosto-dread'), { once: true });
+    }
+    dreadTimer = setTimeout(doPulse, rand(8000, 10000));
+  }
+  dreadTimer = setTimeout(doPulse, rand(5000, 8000));
+}
+
+// ══════════════════════════════════════════════════════════════
 //  RAIN
 // ══════════════════════════════════════════════════════════════
 
 function startRain() {
-  if (isMobile()) return; // disabled on mobile for performance
+  if (isMobile()) return;
   rainContainer = document.createElement('div');
   rainContainer.className = 'dosto-rain';
   const workspace = document.getElementById('workspace');
   if (!workspace) return;
   workspace.appendChild(rainContainer);
 
-  // Create 30 rain streaks
   for (let i = 0; i < 30; i++) {
     const streak = document.createElement('div');
     streak.className = 'dosto-rain-streak';
@@ -434,22 +566,15 @@ function startRain() {
 // ══════════════════════════════════════════════════════════════
 
 function startFlicker() {
-  if (isMobile()) return; // disabled on mobile
+  if (isMobile()) return;
   function doFlicker() {
     if (destroyed) return;
-    const wrapper = document.getElementById('article-wrapper');
-    if (!wrapper) return;
-    const { wState } = getState();
-    const words = [...wrapper.querySelectorAll('.w')].filter(s => {
-      const key = `${s.dataset.li}-${s.dataset.wi}`;
-      return wState[key] !== 'erased';
-    });
+    const words = getUnErasedWords();
     if (words.length) {
       const w = pick(words);
       w.classList.add('dosto-flicker');
       w.addEventListener('animationend', () => w.classList.remove('dosto-flicker'), { once: true });
     }
-    // Next flicker in 3-5s
     flickerTimer = setTimeout(doFlicker, rand(3000, 5000));
   }
   flickerTimer = setTimeout(doFlicker, rand(2000, 4000));
@@ -489,7 +614,6 @@ export function drawRedStrings() {
 
   redCtx.clearRect(0, 0, redCanvas.width, redCanvas.height);
 
-  // Find all kept words in order
   const { wState } = getState();
   const kept = [...wrapper.querySelectorAll('.w')].filter(s => {
     const key = `${s.dataset.li}-${s.dataset.wi}`;
@@ -515,7 +639,6 @@ export function drawRedStrings() {
     redCtx.stroke();
   }
 
-  // Store positions for share card
   keptWordPositions = kept.map(s => {
     const r = s.getBoundingClientRect();
     return {
@@ -525,7 +648,6 @@ export function drawRedStrings() {
   });
 }
 
-/** Get normalized kept-word positions for the share card renderer. */
 export function getRedStringPositions() {
   return keptWordPositions;
 }
@@ -538,18 +660,32 @@ export function initDostoevsky() {
   destroyDostoevsky();
   if (getTheme() !== 'dostoevsky') return;
   destroyed = false;
-  burnCount = 0;
+  destroyCount = 0;
 
   startRain();
   startFlicker();
+  startDreadPulse();
   initRedString();
   scheduleCrow();
+
+  // Inject "No undoing fate" label if not present
+  const toolbar = document.querySelector('#workspace .fmt-group:last-child');
+  if (toolbar && !toolbar.querySelector('.dosto-fate-label')) {
+    const label = document.createElement('span');
+    label.className = 'dosto-fate-label';
+    label.textContent = 'No undoing fate';
+    const undoBtn = document.getElementById('undo-btn');
+    if (undoBtn) {
+      undoBtn.insertAdjacentElement('afterend', label);
+    }
+  }
 }
 
 export function destroyDostoevsky() {
   destroyed = true;
   if (flickerTimer) { clearTimeout(flickerTimer); flickerTimer = null; }
   if (crowTimer) { clearTimeout(crowTimer); crowTimer = null; }
+  if (dreadTimer) { clearTimeout(dreadTimer); dreadTimer = null; }
   if (crowEl) { crowEl.remove(); crowEl = null; }
   if (rainContainer) { rainContainer.remove(); rainContainer = null; }
   if (redCanvas) {
@@ -558,9 +694,13 @@ export function destroyDostoevsky() {
     redCanvas = null;
     redCtx = null;
   }
+  // Remove fate label
+  const label = document.querySelector('.dosto-fate-label');
+  if (label) label.remove();
+
   fascismSpans.clear();
   keptWordPositions = [];
-  burnCount = 0;
+  destroyCount = 0;
 }
 
 /** Called by erasure.js after any erase/keep action to update red strings. */

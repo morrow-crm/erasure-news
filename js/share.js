@@ -174,7 +174,7 @@ const CARD_THEMES = {
     cornerDeco: true,
   },
   dostoevsky: {
-    bg: '#0e1014',
+    bg: '#1a1c22',
     ruledLine: 'rgba(255,255,255,0.015)',
     border: '#2a2c30',
     nameplateBg: '#5a0a0a',
@@ -504,7 +504,7 @@ export async function downloadBlackout() {
 
   try {
     const theme = getTheme();
-    const bgColor = theme === 'dostoevsky' ? '#0e1014' : theme === 'tolstoy' ? '#faf8f0' : '#fafaf7';
+    const bgColor = theme === 'dostoevsky' ? '#1a1c22' : theme === 'tolstoy' ? '#faf8f0' : '#fafaf7';
     const html2canvas = await loadHtml2Canvas();
     const canvas = await html2canvas(wrapper, {
       backgroundColor: bgColor,
