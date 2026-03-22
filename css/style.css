@@ -869,9 +869,8 @@ body {
 
 /* ── TOLSTOY BUTTERFLIES ── */
 
-/* Butterfly wrapper — absolute position, size set by JS */
+/* Butterfly wrapper — size set by JS, position varies by phase */
 .butterfly {
-  position: absolute;
   z-index: 100;
   display: flex;
   align-items: center;
@@ -880,37 +879,53 @@ body {
   pointer-events: auto;
   -webkit-tap-highlight-color: transparent;
 }
-/* Bouquet butterflies are non-interactive */
+/* Bouquet entrance: fixed to viewport, non-interactive */
 .butterfly.bf-bouquet {
   pointer-events: none;
   cursor: default;
 }
 .bf-svg {
   overflow: visible;
-  filter: drop-shadow(0 1px 3px rgba(0,0,0,0.15));
+  filter: drop-shadow(0 1px 3px rgba(0,0,0,0.12));
+}
+/* Larger butterflies get a softer shadow */
+.bf-lg .bf-svg, .bf-xl .bf-svg {
+  filter: drop-shadow(0 2px 5px rgba(0,0,0,0.15));
 }
 
-/* Wing flap animation — speed controlled by --flap-speed */
+/* Wing flap — speed set by --flap-speed per butterfly */
 .bf-wings {
   transform-origin: 20px 20px;
   animation: bf-flap var(--flap-speed, 0.25s) ease-in-out infinite alternate;
 }
 @keyframes bf-flap {
   0%   { transform: scaleX(1); }
-  100% { transform: scaleX(0.3); }
+  100% { transform: scaleX(0.25); }
 }
 
-/* Floating drift — gentle sinusoidal path */
+/* Lower wings (hindwings) flap with slight delay for realism */
+.bf-lwing-l, .bf-lwing-r {
+  opacity: 0.7;
+}
+
+/* Floating drift — ambient butterflies */
 .bf-floating {
-  animation: bf-drift 12s ease-in-out infinite alternate;
+  animation: bf-drift 14s ease-in-out infinite alternate;
   --flap-speed: 0.25s;
 }
+/* Larger butterflies drift more slowly */
+.bf-floating.bf-lg { animation-duration: 18s; }
+.bf-floating.bf-xl { animation-duration: 22s; }
+/* Smaller butterflies are more erratic */
+.bf-floating.bf-sm { animation-duration: 8s; }
+
 @keyframes bf-drift {
   0%   { transform: translate(0, 0) rotate(-3deg); }
-  25%  { transform: translate(30px, -18px) rotate(4deg); }
-  50%  { transform: translate(-20px, -30px) rotate(-2deg); }
-  75%  { transform: translate(15px, 10px) rotate(5deg); }
-  100% { transform: translate(-10px, -8px) rotate(-4deg); }
+  20%  { transform: translate(25px, -20px) rotate(5deg); }
+  40%  { transform: translate(-15px, -35px) rotate(-4deg); }
+  60%  { transform: translate(30px, 5px) rotate(3deg); }
+  80%  { transform: translate(-20px, -12px) rotate(-5deg); }
+  100% { transform: translate(10px, -8px) rotate(2deg); }
 }
 
 /* Flying to word — override drift */
@@ -919,13 +934,12 @@ body {
   transition: none;
 }
 
-/* Resting on word — slow breathing wing movement */
+/* Resting on word — slow deliberate breathing */
 .bf-resting {
   animation: none !important;
-  --flap-speed: 0.8s;
 }
 
-/* Spin-away when no target available */
+/* Spin-away when no target */
 .bf-spin {
   animation: bf-spin-away 0.8s ease-in-out;
 }
@@ -935,26 +949,44 @@ body {
   100% { transform: rotate(720deg) scale(1); }
 }
 
-/* Butterfly color variants — wing fill + body color */
-.bf-yellow .bf-wing-l, .bf-yellow .bf-wing-r { fill: #e8c94a; }
+/* ── Butterfly color variants ── */
+.bf-yellow .bf-wing-l, .bf-yellow .bf-wing-r,
+.bf-yellow .bf-lwing-l, .bf-yellow .bf-lwing-r { fill: #e8c94a; }
+.bf-yellow .bf-lwing-l, .bf-yellow .bf-lwing-r { fill: #d4b83e; }
 .bf-yellow .bf-svg { color: #b89830; }
-.bf-blue .bf-wing-l, .bf-blue .bf-wing-r { fill: #7db8d4; }
+
+.bf-blue .bf-wing-l, .bf-blue .bf-wing-r,
+.bf-blue .bf-lwing-l, .bf-blue .bf-lwing-r { fill: #7db8d4; }
+.bf-blue .bf-lwing-l, .bf-blue .bf-lwing-r { fill: #6aa8c4; }
 .bf-blue .bf-svg { color: #4a7f9a; }
-.bf-orange .bf-wing-l, .bf-orange .bf-wing-r { fill: #e8914a; }
+
+.bf-orange .bf-wing-l, .bf-orange .bf-wing-r,
+.bf-orange .bf-lwing-l, .bf-orange .bf-lwing-r { fill: #e8914a; }
+.bf-orange .bf-lwing-l, .bf-orange .bf-lwing-r { fill: #d4803e; }
 .bf-orange .bf-svg { color: #b06830; }
-.bf-white .bf-wing-l, .bf-white .bf-wing-r { fill: #e0e8d8; }
+
+.bf-white .bf-wing-l, .bf-white .bf-wing-r,
+.bf-white .bf-lwing-l, .bf-white .bf-lwing-r { fill: #e0e8d8; }
+.bf-white .bf-lwing-l, .bf-white .bf-lwing-r { fill: #d0d8c8; }
 .bf-white .bf-svg { color: #8aaa78; }
-.bf-pink .bf-wing-l, .bf-pink .bf-wing-r { fill: #e4a0aa; }
+
+.bf-pink .bf-wing-l, .bf-pink .bf-wing-r,
+.bf-pink .bf-lwing-l, .bf-pink .bf-lwing-r { fill: #e4a0aa; }
+.bf-pink .bf-lwing-l, .bf-pink .bf-lwing-r { fill: #d4909a; }
 .bf-pink .bf-svg { color: #b06878; }
 
-/* Wing detail — vein pattern for visible detail at larger sizes */
+/* Wing stroke detail */
 .bf-wing-l, .bf-wing-r {
   opacity: 0.85;
   stroke: rgba(0,0,0,0.1);
   stroke-width: 0.4;
 }
+.bf-lwing-l, .bf-lwing-r {
+  stroke: rgba(0,0,0,0.06);
+  stroke-width: 0.3;
+}
 
-/* Transformed word styling — bloom effect handled by JS transitions */
+/* Transformed word — bloom effect applied by JS */
 .bf-transformed {
   position: relative;
   font-style: italic;
@@ -972,7 +1004,7 @@ body {
   pointer-events: none;
 }
 
-/* Pollen / pixie dust particles — spiral burst */
+/* Pollen burst — spiral outward */
 .bf-pollen {
   position: fixed;
   width: 5px;
@@ -985,8 +1017,8 @@ body {
 }
 @keyframes bf-pollen-rise {
   0%   { transform: translate(0, 0) scale(1); opacity: 0.85; }
-  60%  { opacity: 0.6; }
-  100% { transform: translate(var(--dx, 0), var(--dy, -30px)) scale(0.2); opacity: 0; }
+  60%  { opacity: 0.5; }
+  100% { transform: translate(var(--dx, 0), var(--dy, -30px)) scale(0.15); opacity: 0; }
 }
 
 /* ── DOSTOEVSKY THEME ── */
