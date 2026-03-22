@@ -221,6 +221,17 @@ document.getElementById('fmt-clear').addEventListener('click', () => {
   document.execCommand('removeFormat');
 });
 
+// ── Burroughs button (placeholder) ──
+document.getElementById('burroughs-btn').addEventListener('click', () => {
+  const btn = document.getElementById('burroughs-btn');
+  if (btn.classList.contains('burroughs-cooldown')) return;
+  console.log('Burroughs fired');
+  btn.classList.add('burroughs-flash');
+  setTimeout(() => btn.classList.remove('burroughs-flash'), 150);
+  btn.classList.add('burroughs-cooldown');
+  setTimeout(() => btn.classList.remove('burroughs-cooldown'), 1000);
+});
+
 // ── Share modal buttons ──
 document.getElementById('share-close-btn').addEventListener('click', closeShare);
 document.getElementById('share-x-btn').addEventListener('click', shareToX);

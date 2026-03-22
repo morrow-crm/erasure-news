@@ -521,6 +521,31 @@ body {
 }
 .fmt-btn:hover { border-color: var(--ink); color: var(--ink); }
 
+/* Burroughs button */
+.burroughs-group { margin-left: 0.6rem; }
+#burroughs-btn {
+  font-family: 'Courier Prime', monospace;
+  font-size: 0.57rem;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  padding: 0.25rem 0.7rem;
+  border: 2px solid #1a1a1a;
+  background: transparent;
+  color: #1a1a1a;
+  font-weight: 700;
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s, border-color 0.15s, opacity 0.15s;
+  animation: burroughs-pulse 3s ease-in-out infinite;
+}
+#burroughs-btn:hover { background: #1a1a1a; color: #fafaf7; }
+#burroughs-btn.burroughs-flash { background: #1a1a1a; color: #fafaf7; }
+#burroughs-btn.burroughs-cooldown { opacity: 0.45; pointer-events: none; }
+
+@keyframes burroughs-pulse {
+  0%, 100% { border-color: rgba(26, 26, 26, 1); }
+  50% { border-color: rgba(26, 26, 26, 0.35); }
+}
+
 #poem-display {
   font-family: 'Playfair Display', serif;
   font-style: italic;
@@ -900,6 +925,26 @@ body {
 .theme-tolstoy #workspace .poem-toolbar {
   border-bottom-color: #8aaa6a;
 }
+.theme-tolstoy #workspace #burroughs-btn {
+  border-color: #3a5c28;
+  color: #3a5c28;
+  font-weight: 700;
+}
+.theme-tolstoy #workspace #burroughs-btn:hover {
+  background: #3a5c28;
+  color: #faf8f0;
+}
+.theme-tolstoy #workspace #burroughs-btn.burroughs-flash {
+  background: #3a5c28;
+  color: #faf8f0;
+}
+@keyframes burroughs-pulse-tolstoy {
+  0%, 100% { border-color: rgba(58, 92, 40, 1); }
+  50% { border-color: rgba(58, 92, 40, 0.35); }
+}
+.theme-tolstoy #workspace #burroughs-btn {
+  animation-name: burroughs-pulse-tolstoy;
+}
 
 /* ── TOLSTOY BUTTERFLIES ── */
 
@@ -1215,6 +1260,26 @@ body {
   background: #8b2020;
   border-color: #8b2020;
   color: #e8e8e8;
+}
+.theme-dostoevsky #workspace #burroughs-btn {
+  border-color: #6b0000;
+  color: #6b0000;
+  font-weight: 700;
+}
+.theme-dostoevsky #workspace #burroughs-btn:hover {
+  background: #6b0000;
+  color: #e8e8e8;
+}
+.theme-dostoevsky #workspace #burroughs-btn.burroughs-flash {
+  background: #6b0000;
+  color: #e8e8e8;
+}
+@keyframes burroughs-pulse-dosto {
+  0%, 100% { border-color: rgba(107, 0, 0, 1); }
+  50% { border-color: rgba(107, 0, 0, 0.35); }
+}
+.theme-dostoevsky #workspace #burroughs-btn {
+  animation-name: burroughs-pulse-dosto;
 }
 .theme-dostoevsky #workspace .ws-instruct {
   background: #1e2128;
