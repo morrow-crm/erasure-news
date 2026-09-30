@@ -1,7 +1,5 @@
 import { h } from './ui.js';
 import { updatePoem } from './poem.js';
-import { getTheme } from './theme.js';
-import { disintegrateWord, onWordAction, isFascismWord } from './dostoevsky.js';
 
 // ── State shared across this module ──
 let layers = [];
@@ -10,7 +8,6 @@ let undoStack = [];
 let dragging = false;
 let dragMode = null;
 
-/** Detect touch-capable device (used for mobile interaction model). */
 export const isTouchDevice = () => 'ontouchstart' in window || navigator.maxTouchPoints > 0;
 
 export function getState() {
@@ -25,7 +22,6 @@ export function resetState() {
   dragMode = null;
 }
 
-/** Tokenize article text into words, spaces, and paragraph breaks. */
 function tokenize(text) {
   const out = [];
   text.split(/([ \t\n]+|¶)/g).forEach(chunk => {
@@ -37,8 +33,6 @@ function tokenize(text) {
   return out;
 }
 
-/** Populate a container with word spans and space text nodes.
- *  Returns the next word index after all words are added. */
 function populateWords(container, toks, li, wiStart) {
   let wi = wiStart;
   toks.forEach(tok => {
@@ -60,7 +54,6 @@ function populateWords(container, toks, li, wiStart) {
   return wi;
 }
 
-/** Build all article columns in the DOM. */
 export function buildArticleLayers(articles, wrapper) {
   layers = articles;
   wState = {};
@@ -73,7 +66,7 @@ export function buildArticleLayers(articles, wrapper) {
     div.className = 'article-col';
     div.id = `al-${li}`;
 
-    const leanLabel = { left: 'L', center: 'C', right: 'R', unicorn: '\u2726' }[art.lean] || '';
+    const leanLabel = { left: 'L', center: 'C', right: 'R', unicorn: '✦' }[art.lean] || '';
     const leanClass = art.lean ? `lean-${art.lean}` : '';
     const srcDisplay = art.s || art.short;
 
@@ -84,7 +77,6 @@ export function buildArticleLayers(articles, wrapper) {
       <div class="art-byline"></div>
       <div class="art-body" id="ab-${li}"></div>`;
 
-    // Add "Read full article" link for any article under 150 words
     const artWordCount = (art.paragraphs || []).join(' ').split(/\s+/).filter(Boolean).length;
     if (artWordCount < 150 && art.url) {
       const link = document.createElement('div');
@@ -96,23 +88,16 @@ export function buildArticleLayers(articles, wrapper) {
     wrapper.appendChild(div);
 
     let wi = 0;
-
-    // Headline words
     const hedToks = tokenize(art.headline || '');
     wi = populateWords(div.querySelector('.art-hed'), hedToks, li, wi);
-
-    // Byline words
     const bylToks = tokenize(art.byline || '');
     wi = populateWords(div.querySelector('.art-byline'), bylToks, li, wi);
-
-    // Body words
     const bodyToks = tokenize(art.paragraphs.join(' ¶ '));
     art.toks = bodyToks;
     populateWords(div.querySelector(`#ab-${li}`), bodyToks, li, wi);
   });
 }
 
-/** Apply erase or keep action to a word span. */
 function act(span, mode) {
   const li = parseInt(span.dataset.li);
   const wi = parseInt(span.dataset.wi);
@@ -124,18 +109,8 @@ function act(span, mode) {
     undoStack.push({ key, prev });
     wState[key] = 'erased';
     span.classList.remove('kept');
-
-    // Dostoevsky: disintegration animation
-    if (getTheme() === 'dostoevsky') {
-      disintegrateWord(span).then(() => {
-        span.classList.add('erased');
-        updatePoem();
-        onWordAction();
-      });
-    } else {
-      span.classList.add('erased');
-      updatePoem();
-    }
+    span.classList.add('erased');
+    updatePoem();
   } else {
     if (prev === 'erased') return;
     undoStack.push({ key, prev });
@@ -147,17 +122,13 @@ function act(span, mode) {
       span.classList.add('kept');
     }
     updatePoem();
-    onWordAction();
   }
 }
 
-/** Undo the last erase/keep action (supports batch entries from Burroughs). */
 export function undoLast() {
-  if (getTheme() === 'dostoevsky') return; // No undoing fate
   if (!undoStack.length) return;
   const entry = undoStack.pop();
 
-  // Batch undo (Burroughs techniques)
   if (entry.batch) {
     for (const { key, prev } of entry.batch) {
       const [li, wi] = key.split('-').map(Number);
@@ -165,7 +136,7 @@ export function undoLast() {
       const span = [...layerEl.querySelectorAll('.w')].find(s => parseInt(s.dataset.wi) === wi);
       if (!span) continue;
       wState[key] = prev;
-      span.classList.remove('erased', 'kept', 'dosto-gone', 'dosto-disintegrating');
+      span.classList.remove('erased', 'kept');
       span.style.visibility = '';
       if (prev === 'erased') span.classList.add('erased');
       else if (prev === 'kept') span.classList.add('kept');
@@ -174,7 +145,6 @@ export function undoLast() {
     return;
   }
 
-  // Single undo
   const { key, prev } = entry;
   const [li, wi] = key.split('-').map(Number);
   const layerEl = document.getElementById(`al-${li}`);
@@ -189,9 +159,7 @@ export function undoLast() {
   updatePoem();
 }
 
-/** Un-erase a word (restore from erased state). */
 function unerase(span) {
-  if (getTheme() === 'dostoevsky') return; // No undoing fate
   const li = parseInt(span.dataset.li);
   const wi = parseInt(span.dataset.wi);
   const key = `${li}-${wi}`;
@@ -200,15 +168,12 @@ function unerase(span) {
   undoStack.push({ key, prev });
   wState[key] = null;
   span.classList.remove('erased');
-  // Flash animation for visual feedback
   span.classList.add('unerase-flash');
   span.addEventListener('animationend', () => span.classList.remove('unerase-flash'), { once: true });
   updatePoem();
 }
 
-/** Attach mouse and touch event delegation on the article wrapper. */
 export function attachInteraction(wrapper) {
-  // ── Mouse events (desktop — unchanged) ──
   wrapper.addEventListener('mousedown', e => {
     const span = e.target.closest('.w');
     if (!span) return;
@@ -230,7 +195,6 @@ export function attachInteraction(wrapper) {
     dragMode = null;
   });
 
-  // ── Touch events (mobile) ──
   let touchStartedOnWord = false;
   let lastTouchSpan = null;
   let touchStartSpan = null;
@@ -244,7 +208,7 @@ export function attachInteraction(wrapper) {
     const span = el?.closest('.w');
     if (!span) {
       touchStartedOnWord = false;
-      return; // Let normal scrolling happen
+      return;
     }
     touchStartedOnWord = true;
     touchMoved = false;
@@ -258,7 +222,6 @@ export function attachInteraction(wrapper) {
   wrapper.addEventListener('touchmove', e => {
     if (!touchStartedOnWord || !dragging) return;
     if (!touchMoved) {
-      // First move — erase the starting word (drag started)
       touchMoved = true;
       if (touchStartSpan) act(touchStartSpan, 'erase');
     }
@@ -272,26 +235,22 @@ export function attachInteraction(wrapper) {
     e.preventDefault();
   }, { passive: false });
 
-  const endTouch = (e) => {
+  const endTouch = () => {
     if (!touchStartedOnWord) return;
     const span = lastTouchSpan;
     const now = Date.now();
 
     if (!touchMoved && span) {
-      // Single tap (no drag) — check for double tap
       const key = `${span.dataset.li}-${span.dataset.wi}`;
       const isErased = wState[key] === 'erased';
 
       if (now - lastTapTime < 350 && lastTapSpan === span) {
-        // Double tap
         if (isErased) {
           unerase(span);
         }
-        // Double tap on non-erased word does nothing
         lastTapTime = 0;
         lastTapSpan = null;
       } else {
-        // First tap — erase the word
         if (!isErased) {
           act(span, 'erase');
         }
@@ -299,7 +258,6 @@ export function attachInteraction(wrapper) {
         lastTapSpan = span;
       }
     } else if (touchMoved && lastTouchSpan) {
-      // Drag ended — also erase the starting word if it wasn't already
       const startKey = `${lastTouchSpan.dataset.li}-${lastTouchSpan.dataset.wi}`;
       if (wState[startKey] !== 'erased') {
         act(lastTouchSpan, 'erase');

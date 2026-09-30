@@ -10,9 +10,6 @@ import {
 } from './erasure.js';
 import { updatePoem, initPoemTextarea, resetPoemState } from './poem.js';
 import { openShare, closeShare, shareToX, shareToMastodon, copyText, downloadCard, setShareDate, downloadBlackout, resetEdition } from './share.js';
-import { initThemeSelector, applyTheme, clearTheme, setTheme, resetThemeSelector } from './theme.js';
-import { spawnButterflies, destroyButterflies } from './butterfly.js';
-import { initDostoevsky, destroyDostoevsky } from './dostoevsky.js';
 import { fireBurroughs } from './burroughs.js';
 
 // ── Dates ──
@@ -31,7 +28,6 @@ const getTopics = initTopicPills(document.getElementById('topic-pills'));
 const wrapper = document.getElementById('article-wrapper');
 attachInteraction(wrapper);
 initPoemTextarea();
-initThemeSelector();
 
 // ── Headline browsing state ──
 let headlineData = [];
@@ -40,15 +36,14 @@ let selectedIndices = new Set();
 function updateCount() {
   const el = document.getElementById('hl-count');
   if (selectedIndices.size === 0) {
-    el.textContent = 'Select 1\u20133 stories for erasure';
+    el.textContent = 'Select 1–3 stories for erasure';
   } else {
     const leans = [...selectedIndices].map(i => headlineData[i]?.sourceObj?.lean).filter(Boolean);
-    const leanSummary = leans.map(l => ({ left: 'L', center: 'C', right: 'R', unicorn: '\u2726' }[l] || '?')).join(' ');
-    el.textContent = `${selectedIndices.size} of 3 selected \u00B7 ${leanSummary}`;
+    const leanSummary = leans.map(l => ({ left: 'L', center: 'C', right: 'R', unicorn: '✦' }[l] || '?')).join(' ');
+    el.textContent = `${selectedIndices.size} of 3 selected · ${leanSummary}`;
   }
 }
 
-/** Find a balanced L/C/R suggestion from available headlines. */
 function suggestBalanced() {
   const leftIdx = headlineData.findIndex(hl => hl.sourceObj?.lean === 'left');
   const centerIdx = headlineData.findIndex(hl => hl.sourceObj?.lean === 'center');
@@ -115,12 +110,12 @@ function buildParagraphsFromHeadline(hl) {
 document.getElementById('begin-btn').addEventListener('click', async () => {
   const topics = getTopics();
 
-  showLoading('Searching today\u2019s press\u2026');
+  showLoading('Searching today’s press…');
   headlineData = [];
   selectedIndices.clear();
 
   try {
-    setLoadingStatus('Searching across the spectrum\u2026');
+    setLoadingStatus('Searching across the spectrum…');
     const headlines = await fetchAllHeadlines(topics, dateShort);
     headlines.forEach(hl => {
       headlineData.push({
@@ -172,11 +167,8 @@ document.getElementById('erasure-btn').addEventListener('click', () => {
   });
 
   buildArticleLayers(results, wrapper);
-  applyTheme();
   showWorkspace();
   updatePoem();
-  spawnButterflies();
-  initDostoevsky();
   window.scrollTo({ top: 0, behavior: 'smooth' });
 });
 
@@ -188,12 +180,7 @@ document.getElementById('reset-btn').addEventListener('click', () => {
   resetState();
   resetPoemState();
   resetEdition();
-  destroyButterflies();
-  destroyDostoevsky();
   clearHeadlineCards();
-  clearTheme();
-  setTheme('default');
-  resetThemeSelector();
   document.getElementById('headlines-section').style.display = 'none';
   headlineData = [];
   selectedIndices.clear();
@@ -229,7 +216,6 @@ document.getElementById('burroughs-btn').addEventListener('click', async () => {
   btn.classList.add('burroughs-cooldown');
   const didFire = await fireBurroughs();
   if (!didFire) {
-    // Nothing to erase — brief flash only
     btn.classList.add('burroughs-flash');
     setTimeout(() => btn.classList.remove('burroughs-flash'), 150);
   }
